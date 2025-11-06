@@ -16,32 +16,18 @@ const Stack = createNativeStackNavigator<RootStackParamList>();
 export default function AppNavigator() {
   return (
     <NavigationContainer>
-      <Stack.Navigator
-        initialRouteName="Home"
-        screenOptions={{
-          headerStyle: {
-            backgroundColor: '#007AFF',
-          },
-          headerTintColor: '#fff',
-          headerTitleStyle: {
-            fontWeight: 'bold',
-          },
-        }}
-      >
+      <Stack.Navigator initialRouteName="Home">
         <Stack.Screen
           name="Home"
           component={HomeScreen}
-          options={{ title: 'Daash Home' }}
         />
         <Stack.Screen
           name="Details"
           component={DetailsScreen}
-          options={{ title: 'Details' }}
         />
         <Stack.Screen
           name="Profile"
           component={ProfileScreen}
-          options={{ title: 'Profile' }}
         />
       </Stack.Navigator>
     </NavigationContainer>
