@@ -1,8 +1,13 @@
-import React from 'react';
-import { View, Text, StyleSheet, TouchableOpacity } from 'react-native';
+import React, { useCallback, useEffect, useState } from 'react';
+import { View, Text, StyleSheet } from 'react-native';
 import { NavigationContainer } from '@react-navigation/native';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import type { BottomTabScreenProps } from '@react-navigation/bottom-tabs';
+import * as SplashScreen from 'expo-splash-screen';
+import { useFonts, AbrilFatface_400Regular } from '@expo-google-fonts/abril-fatface';
+
+// Keep the splash screen visible while we fetch resources
+SplashScreen.preventAutoHideAsync();
 
 type TabParamList = {
   Home: undefined;
@@ -53,59 +58,104 @@ function ProfileScreen({ navigation }: ProfileProps) {
   );
 }
 
-export default function App() {
+function CustomSplashScreen() {
   return (
-    <NavigationContainer>
-      <Tab.Navigator
-        screenOptions={{
-          tabBarActiveTintColor: '#007AFF',
-          tabBarInactiveTintColor: 'gray',
-          tabBarStyle: {
-            paddingBottom: 5,
-            paddingTop: 5,
-            height: 60,
-          },
-          headerStyle: {
-            backgroundColor: '#007AFF',
-          },
-          headerTintColor: '#fff',
-          headerTitleStyle: {
-            fontWeight: 'bold',
-          },
-        }}
-      >
-        <Tab.Screen
-          name="Home"
-          component={HomeScreen}
-          options={{
-            tabBarLabel: 'Home',
-            tabBarIcon: ({ color }) => (
-              <Text style={{ fontSize: 24 }}>🏠</Text>
-            ),
+    <View style={styles.splashContainer}>
+      <Text style={styles.splashText}>Daash</Text>
+    </View>
+  );
+}
+
+export default function App() {
+  const [appIsReady, setAppIsReady] = useState(false);
+  const [showSplash, setShowSplash] = useState(true);
+
+  let [fontsLoaded] = useFonts({
+    AbrilFatface_400Regular,
+  });
+
+  useEffect(() => {
+    async function prepare() {
+      try {
+        // Wait for fonts to load
+        if (fontsLoaded) {
+          // Wait 3 seconds
+          await new Promise(resolve => setTimeout(resolve, 3000));
+          setShowSplash(false);
+          setAppIsReady(true);
+        }
+      } catch (e) {
+        console.warn(e);
+      }
+    }
+
+    prepare();
+  }, [fontsLoaded]);
+
+  const onLayoutRootView = useCallback(async () => {
+    if (appIsReady) {
+      await SplashScreen.hideAsync();
+    }
+  }, [appIsReady]);
+
+  if (!appIsReady || showSplash) {
+    return <CustomSplashScreen />;
+  }
+
+  return (
+    <View style={{ flex: 1 }} onLayout={onLayoutRootView}>
+      <NavigationContainer>
+        <Tab.Navigator
+          screenOptions={{
+            tabBarActiveTintColor: '#007AFF',
+            tabBarInactiveTintColor: 'gray',
+            tabBarStyle: {
+              paddingBottom: 5,
+              paddingTop: 5,
+              height: 60,
+            },
+            headerStyle: {
+              backgroundColor: '#007AFF',
+            },
+            headerTintColor: '#fff',
+            headerTitleStyle: {
+              fontWeight: 'bold',
+            },
           }}
-        />
-        <Tab.Screen
-          name="Search"
-          component={SearchScreen}
-          options={{
-            tabBarLabel: 'Search',
-            tabBarIcon: ({ color }) => (
-              <Text style={{ fontSize: 24 }}>🔍</Text>
-            ),
-          }}
-        />
-        <Tab.Screen
-          name="Profile"
-          component={ProfileScreen}
-          options={{
-            tabBarLabel: 'Profile',
-            tabBarIcon: ({ color }) => (
-              <Text style={{ fontSize: 24 }}>👤</Text>
-            ),
-          }}
-        />
-      </Tab.Navigator>
-    </NavigationContainer>
+        >
+          <Tab.Screen
+            name="Home"
+            component={HomeScreen}
+            options={{
+              tabBarLabel: 'Home',
+              tabBarIcon: ({ color }) => (
+                <Text style={{ fontSize: 24 }}>🏠</Text>
+              ),
+            }}
+          />
+          <Tab.Screen
+            name="Search"
+            component={SearchScreen}
+            options={{
+              tabBarLabel: 'Search',
+              tabBarIcon: ({ color }) => (
+                <Text style={{ fontSize: 24 }}>🔍</Text>
+              ),
+            }}
+          />
+          <Tab.Screen
+            name="Profile"
+            component={ProfileScreen}
+            options={{
+              tabBarLabel: 'Profile',
+              tabBarIcon: ({ color }) => (
+                <Text style={{ fontSize: 24 }}>👤</Text>
+              ),
+            }}
+          />
+        </Tab.Navigator>
+      </NavigationContainer>
+    </View>
   );
 }
 
@@ -147,5 +197,17 @@ const styles = StyleSheet.create({
   infoValue: {
     fontSize: 16,
     color: '#333',
+  },
+  splashContainer: {
+    flex: 1,
+    backgroundColor: '#5D5D5D',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  splashText: {
+    fontFamily: 'AbrilFatface_400Regular',
+    fontSize: 64,
+    color: '#FFFFFF',
+    fontWeight: 'normal',
   },
 });
