@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import { View, Text, StyleSheet } from 'react-native';
 import { NavigationContainer } from '@react-navigation/native';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
@@ -53,7 +53,29 @@ function ProfileScreen({ navigation }: ProfileProps) {
   );
 }
 
+function SplashScreen() {
+  return (
+    <View style={styles.splashContainer}>
+      <Text style={styles.splashText}>Daash</Text>
+    </View>
+  );
+}
+
 export default function App() {
+  const [isLoading, setIsLoading] = useState(true);
+
+  useEffect(() => {
+    // Show splash screen for 3 seconds
+    const timer = setTimeout(() => {
+      setIsLoading(false);
+    }, 3000);
+
+    return () => clearTimeout(timer);
+  }, []);
+
+  if (isLoading) {
+    return <SplashScreen />;
+  }
   return (
     <NavigationContainer>
         <Tab.Navigator
@@ -138,5 +160,16 @@ const styles = StyleSheet.create({
   infoValue: {
     fontSize: 16,
     color: '#333',
+  },
+  splashContainer: {
+    flex: 1,
+    backgroundColor: '#5D5D5D',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  splashText: {
+    fontSize: 64,
+    fontWeight: 'bold',
+    color: '#FFFFFF',
   },
 });
