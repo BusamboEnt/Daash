@@ -5,6 +5,7 @@ import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import type { BottomTabScreenProps } from '@react-navigation/bottom-tabs';
 import * as SplashScreen from 'expo-splash-screen';
 import { useFonts, AbrilFatface_400Regular } from '@expo-google-fonts/abril-fatface';
+import { EvilIcons } from '@expo/vector-icons';
 
 // Keep the splash screen visible while we fetch resources
 SplashScreen.preventAutoHideAsync();
@@ -24,7 +25,7 @@ const Tab = createBottomTabNavigator<TabParamList>();
 function HomeScreen({ navigation }: HomeProps) {
   return (
     <View style={styles.container}>
-      <Text style={styles.title}>🏠 Home Screen</Text>
+      <Text style={styles.title}>Home Screen</Text>
       <Text style={styles.subtitle}>Welcome to Daash!</Text>
       <Text style={styles.text}>This is a React Native app with TypeScript and Bottom Tab Navigation</Text>
     </View>
@@ -34,7 +35,7 @@ function HomeScreen({ navigation }: HomeProps) {
 function SearchScreen({ navigation }: SearchProps) {
   return (
     <View style={styles.container}>
-      <Text style={styles.title}>🔍 Search Screen</Text>
+      <Text style={styles.title}>Search Screen</Text>
       <Text style={styles.subtitle}>Find what you need</Text>
       <Text style={styles.text}>Search functionality goes here</Text>
     </View>
@@ -44,7 +45,7 @@ function SearchScreen({ navigation }: SearchProps) {
 function ProfileScreen({ navigation }: ProfileProps) {
   return (
     <View style={styles.container}>
-      <Text style={styles.title}>👤 Profile Screen</Text>
+      <Text style={styles.title}>Profile Screen</Text>
       <Text style={styles.subtitle}>Your Profile</Text>
       <View style={styles.infoContainer}>
         <Text style={styles.infoLabel}>Name:</Text>
@@ -128,8 +129,8 @@ export default function App() {
             component={HomeScreen}
             options={{
               tabBarLabel: 'Home',
-              tabBarIcon: ({ color }) => (
-                <Text style={{ fontSize: 24 }}>🏠</Text>
+              tabBarIcon: ({ color, size }) => (
+                <EvilIcons name="navicon" size={size ? size + 8 : 32} color={color} />
               ),
             }}
           />
@@ -138,8 +139,8 @@ export default function App() {
             component={SearchScreen}
             options={{
               tabBarLabel: 'Search',
-              tabBarIcon: ({ color }) => (
-                <Text style={{ fontSize: 24 }}>🔍</Text>
+              tabBarIcon: ({ color, size }) => (
+                <EvilIcons name="search" size={size ? size + 8 : 32} color={color} />
               ),
             }}
           />
@@ -148,8 +149,8 @@ export default function App() {
             component={ProfileScreen}
             options={{
               tabBarLabel: 'Profile',
-              tabBarIcon: ({ color }) => (
-                <Text style={{ fontSize: 24 }}>👤</Text>
+              tabBarIcon: ({ color, size }) => (
+                <EvilIcons name="user" size={size ? size + 8 : 32} color={color} />
               ),
             }}
           />
