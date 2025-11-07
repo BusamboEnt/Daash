@@ -1,4 +1,4 @@
-import React, { useCallback, useEffect, useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { View, Text, StyleSheet } from 'react-native';
 import { NavigationContainer } from '@react-navigation/native';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
@@ -59,17 +59,16 @@ function ProfileScreen({ navigation }: ProfileProps) {
   );
 }
 
-function CustomSplashScreen() {
+function CustomSplashScreen({ fontsLoaded }: { fontsLoaded?: boolean }) {
   return (
     <View style={styles.splashContainer}>
-      <Text style={styles.splashText}>Daash</Text>
+      <Text style={[styles.splashText, !fontsLoaded && { fontFamily: 'System' }]}>Daash</Text>
     </View>
   );
 }
 
 export default function App() {
   const [appIsReady, setAppIsReady] = useState(false);
-  const [showSplash, setShowSplash] = useState(true);
 
   let [fontsLoaded, fontError] = useFonts({
     AbrilFatface_400Regular,
@@ -78,36 +77,25 @@ export default function App() {
   useEffect(() => {
     async function prepare() {
       try {
-        // Wait for fonts to load or error
-        if (fontsLoaded || fontError) {
-          // Wait 3 seconds
-          await new Promise(resolve => setTimeout(resolve, 3000));
-          setShowSplash(false);
-          setAppIsReady(true);
-        }
+        // Show splash for 3 seconds regardless of font loading
+        await new Promise(resolve => setTimeout(resolve, 3000));
+        setAppIsReady(true);
+        await SplashScreen.hideAsync();
       } catch (e) {
         console.warn(e);
-        // If there's an error, still show the app
-        setShowSplash(false);
         setAppIsReady(true);
       }
     }
 
     prepare();
-  }, [fontsLoaded, fontError]);
+  }, []);
 
-  const onLayoutRootView = useCallback(async () => {
-    if (appIsReady) {
-      await SplashScreen.hideAsync();
-    }
-  }, [appIsReady]);
-
-  if (!appIsReady || showSplash) {
-    return <CustomSplashScreen />;
+  if (!appIsReady) {
+    return <CustomSplashScreen fontsLoaded={fontsLoaded} />;
   }
 
   return (
-    <View style={{ flex: 1 }} onLayout={onLayoutRootView}>
+    <View style={{ flex: 1 }}>
       <NavigationContainer>
         <Tab.Navigator
           screenOptions={{
