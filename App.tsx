@@ -1,45 +1,54 @@
 import React from 'react';
 import { View, Text, StyleSheet, TouchableOpacity } from 'react-native';
 import { NavigationContainer } from '@react-navigation/native';
-import { createNativeStackNavigator } from '@react-navigation/native-stack';
-import type { NativeStackScreenProps } from '@react-navigation/native-stack';
+import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
+import type { BottomTabScreenProps } from '@react-navigation/bottom-tabs';
 
-type RootStackParamList = {
+type TabParamList = {
   Home: undefined;
-  Details: { itemId: number };
+  Search: undefined;
+  Profile: undefined;
 };
 
-type HomeProps = NativeStackScreenProps<RootStackParamList, 'Home'>;
-type DetailsProps = NativeStackScreenProps<RootStackParamList, 'Details'>;
+type HomeProps = BottomTabScreenProps<TabParamList, 'Home'>;
+type SearchProps = BottomTabScreenProps<TabParamList, 'Search'>;
+type ProfileProps = BottomTabScreenProps<TabParamList, 'Profile'>;
 
-const Stack = createNativeStackNavigator<RootStackParamList>();
+const Tab = createBottomTabNavigator<TabParamList>();
 
 function HomeScreen({ navigation }: HomeProps) {
   return (
     <View style={styles.container}>
-      <Text style={styles.title}>Welcome to Daash!</Text>
-      <TouchableOpacity
-        style={styles.button}
-        onPress={() => navigation.navigate('Details', { itemId: 42 })}
-      >
-        <Text style={styles.buttonText}>Go to Details</Text>
-      </TouchableOpacity>
+      <Text style={styles.title}>🏠 Home Screen</Text>
+      <Text style={styles.subtitle}>Welcome to Daash!</Text>
+      <Text style={styles.text}>This is a React Native app with TypeScript and Bottom Tab Navigation</Text>
     </View>
   );
 }
 
-function DetailsScreen({ route, navigation }: DetailsProps) {
-  const { itemId } = route.params;
+function SearchScreen({ navigation }: SearchProps) {
   return (
     <View style={styles.container}>
-      <Text style={styles.title}>Details Screen</Text>
-      <Text style={styles.text}>Item ID: {itemId}</Text>
-      <TouchableOpacity
-        style={styles.button}
-        onPress={() => navigation.goBack()}
-      >
-        <Text style={styles.buttonText}>Go Back</Text>
-      </TouchableOpacity>
+      <Text style={styles.title}>🔍 Search Screen</Text>
+      <Text style={styles.subtitle}>Find what you need</Text>
+      <Text style={styles.text}>Search functionality goes here</Text>
+    </View>
+  );
+}
+
+function ProfileScreen({ navigation }: ProfileProps) {
+  return (
+    <View style={styles.container}>
+      <Text style={styles.title}>👤 Profile Screen</Text>
+      <Text style={styles.subtitle}>Your Profile</Text>
+      <View style={styles.infoContainer}>
+        <Text style={styles.infoLabel}>Name:</Text>
+        <Text style={styles.infoValue}>John Doe</Text>
+      </View>
+      <View style={styles.infoContainer}>
+        <Text style={styles.infoLabel}>Email:</Text>
+        <Text style={styles.infoValue}>john@example.com</Text>
+      </View>
     </View>
   );
 }
@@ -47,18 +56,55 @@ function DetailsScreen({ route, navigation }: DetailsProps) {
 export default function App() {
   return (
     <NavigationContainer>
-      <Stack.Navigator>
-        <Stack.Screen
+      <Tab.Navigator
+        screenOptions={{
+          tabBarActiveTintColor: '#007AFF',
+          tabBarInactiveTintColor: 'gray',
+          tabBarStyle: {
+            paddingBottom: 5,
+            paddingTop: 5,
+            height: 60,
+          },
+          headerStyle: {
+            backgroundColor: '#007AFF',
+          },
+          headerTintColor: '#fff',
+          headerTitleStyle: {
+            fontWeight: 'bold',
+          },
+        }}
+      >
+        <Tab.Screen
           name="Home"
           component={HomeScreen}
-          options={{ title: 'Home' }}
+          options={{
+            tabBarLabel: 'Home',
+            tabBarIcon: ({ color }) => (
+              <Text style={{ fontSize: 24 }}>🏠</Text>
+            ),
+          }}
         />
-        <Stack.Screen
-          name="Details"
-          component={DetailsScreen}
-          options={{ title: 'Details' }}
+        <Tab.Screen
+          name="Search"
+          component={SearchScreen}
+          options={{
+            tabBarLabel: 'Search',
+            tabBarIcon: ({ color }) => (
+              <Text style={{ fontSize: 24 }}>🔍</Text>
+            ),
+          }}
         />
-      </Stack.Navigator>
+        <Tab.Screen
+          name="Profile"
+          component={ProfileScreen}
+          options={{
+            tabBarLabel: 'Profile',
+            tabBarIcon: ({ color }) => (
+              <Text style={{ fontSize: 24 }}>👤</Text>
+            ),
+          }}
+        />
+      </Tab.Navigator>
     </NavigationContainer>
   );
 }
@@ -72,24 +118,34 @@ const styles = StyleSheet.create({
     padding: 20,
   },
   title: {
-    fontSize: 24,
+    fontSize: 32,
     fontWeight: 'bold',
+    marginBottom: 10,
+  },
+  subtitle: {
+    fontSize: 20,
+    color: '#666',
     marginBottom: 20,
   },
   text: {
     fontSize: 16,
-    marginBottom: 20,
-  },
-  button: {
-    backgroundColor: '#007AFF',
-    paddingHorizontal: 30,
-    paddingVertical: 15,
-    borderRadius: 8,
+    textAlign: 'center',
+    color: '#333',
     marginTop: 10,
   },
-  buttonText: {
-    color: '#fff',
+  infoContainer: {
+    flexDirection: 'row',
+    marginVertical: 10,
+    alignItems: 'center',
+  },
+  infoLabel: {
     fontSize: 16,
     fontWeight: '600',
+    marginRight: 10,
+    color: '#007AFF',
+  },
+  infoValue: {
+    fontSize: 16,
+    color: '#333',
   },
 });
