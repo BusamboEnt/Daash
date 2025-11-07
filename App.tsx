@@ -71,15 +71,15 @@ export default function App() {
   const [appIsReady, setAppIsReady] = useState(false);
   const [showSplash, setShowSplash] = useState(true);
 
-  let [fontsLoaded] = useFonts({
+  let [fontsLoaded, fontError] = useFonts({
     AbrilFatface_400Regular,
   });
 
   useEffect(() => {
     async function prepare() {
       try {
-        // Wait for fonts to load
-        if (fontsLoaded) {
+        // Wait for fonts to load or error
+        if (fontsLoaded || fontError) {
           // Wait 3 seconds
           await new Promise(resolve => setTimeout(resolve, 3000));
           setShowSplash(false);
@@ -87,11 +87,14 @@ export default function App() {
         }
       } catch (e) {
         console.warn(e);
+        // If there's an error, still show the app
+        setShowSplash(false);
+        setAppIsReady(true);
       }
     }
 
     prepare();
-  }, [fontsLoaded]);
+  }, [fontsLoaded, fontError]);
 
   const onLayoutRootView = useCallback(async () => {
     if (appIsReady) {
@@ -209,6 +212,6 @@ const styles = StyleSheet.create({
     fontFamily: 'AbrilFatface_400Regular',
     fontSize: 64,
     color: '#FFFFFF',
-    fontWeight: 'normal',
+    fontWeight: 'bold',
   },
 });
