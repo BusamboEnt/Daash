@@ -9,13 +9,10 @@
     "web": "expo start --web"
   },
   "dependencies": {
-    "@expo-google-fonts/abril-fatface": "^0.4.1",
     "@react-navigation/bottom-tabs": "^6.6.1",
     "@react-navigation/native": "^6.1.9",
     "@react-navigation/native-stack": "^6.9.17",
     "expo": "~51.0.0",
-    "expo-font": "^14.0.9",
-    "expo-splash-screen": "^31.0.10",
     "expo-status-bar": "~1.12.1",
     "react": "18.2.0",
     "react-native": "0.74.5",

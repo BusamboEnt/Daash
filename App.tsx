@@ -1,14 +1,8 @@
-import React, { useEffect, useState } from 'react';
+import React from 'react';
 import { View, Text, StyleSheet } from 'react-native';
 import { NavigationContainer } from '@react-navigation/native';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import type { BottomTabScreenProps } from '@react-navigation/bottom-tabs';
-import * as SplashScreen from 'expo-splash-screen';
-import { useFonts, AbrilFatface_400Regular } from '@expo-google-fonts/abril-fatface';
-import { EvilIcons } from '@expo/vector-icons';
-
-// Keep the splash screen visible while we fetch resources
-SplashScreen.preventAutoHideAsync();
 
 type TabParamList = {
   Home: undefined;
@@ -59,44 +53,9 @@ function ProfileScreen({ navigation }: ProfileProps) {
   );
 }
 
-function CustomSplashScreen({ fontsLoaded }: { fontsLoaded?: boolean }) {
-  return (
-    <View style={styles.splashContainer}>
-      <Text style={[styles.splashText, !fontsLoaded && { fontFamily: 'System' }]}>Daash</Text>
-    </View>
-  );
-}
-
 export default function App() {
-  const [appIsReady, setAppIsReady] = useState(false);
-
-  let [fontsLoaded, fontError] = useFonts({
-    AbrilFatface_400Regular,
-  });
-
-  useEffect(() => {
-    async function prepare() {
-      try {
-        // Show splash for 3 seconds regardless of font loading
-        await new Promise(resolve => setTimeout(resolve, 3000));
-        setAppIsReady(true);
-        await SplashScreen.hideAsync();
-      } catch (e) {
-        console.warn(e);
-        setAppIsReady(true);
-      }
-    }
-
-    prepare();
-  }, []);
-
-  if (!appIsReady) {
-    return <CustomSplashScreen fontsLoaded={fontsLoaded} />;
-  }
-
   return (
-    <View style={{ flex: 1 }}>
-      <NavigationContainer>
+    <NavigationContainer>
         <Tab.Navigator
           screenOptions={{
             tabBarActiveTintColor: '#007AFF',
@@ -120,9 +79,6 @@ export default function App() {
             component={HomeScreen}
             options={{
               tabBarLabel: 'Home',
-              tabBarIcon: ({ color, size }) => (
-                <EvilIcons name="navicon" size={size ? size + 8 : 32} color={color} />
-              ),
             }}
           />
           <Tab.Screen
@@ -130,9 +86,6 @@ export default function App() {
             component={SearchScreen}
             options={{
               tabBarLabel: 'Search',
-              tabBarIcon: ({ color, size }) => (
-                <EvilIcons name="search" size={size ? size + 8 : 32} color={color} />
-              ),
             }}
           />
           <Tab.Screen
@@ -140,14 +93,10 @@ export default function App() {
             component={ProfileScreen}
             options={{
               tabBarLabel: 'Profile',
-              tabBarIcon: ({ color, size }) => (
-                <EvilIcons name="user" size={size ? size + 8 : 32} color={color} />
-              ),
             }}
           />
         </Tab.Navigator>
       </NavigationContainer>
-    </View>
   );
 }
 
@@ -189,17 +138,5 @@ const styles = StyleSheet.create({
   infoValue: {
     fontSize: 16,
     color: '#333',
-  },
-  splashContainer: {
-    flex: 1,
-    backgroundColor: '#5D5D5D',
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  splashText: {
-    fontFamily: 'AbrilFatface_400Regular',
-    fontSize: 64,
-    color: '#FFFFFF',
-    fontWeight: 'bold',
   },
 });
