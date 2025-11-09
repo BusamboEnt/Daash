@@ -24,7 +24,7 @@ const Header: React.FC<HeaderProps> = ({ onSearch, onMenuPress }) => {
 
 const styles = StyleSheet.create({
   safeArea: {
-    backgroundColor: '#FFFFFF',
+    backgroundColor: '#8A784E',
   },
   headerContainer: {
     flexDirection: 'row',
