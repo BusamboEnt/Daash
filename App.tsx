@@ -11,6 +11,8 @@ import { Header, AdvancedBalanceCard, TransactionList } from './src/components';
 import { WalletProvider, useWallet } from './src/context/WalletContext';
 import WalletSetupScreen from './src/screens/WalletSetupScreen';
 import SendPaymentScreen from './src/screens/SendPaymentScreen';
+import OnRampScreen from './src/screens/OnRampScreen';
+import OffRampScreen from './src/screens/OffRampScreen';
 
 type TabParamList = {
   Home: undefined;
@@ -27,6 +29,8 @@ const Tab = createBottomTabNavigator<TabParamList>();
 function HomeScreen({ navigation }: HomeProps) {
   const wallet = useWallet();
   const [showSendPayment, setShowSendPayment] = useState(false);
+  const [showOnRamp, setShowOnRamp] = useState(false);
+  const [showOffRamp, setShowOffRamp] = useState(false);
 
   const handleSearch = (text: string) => {
     console.log('Search:', text);
@@ -37,16 +41,14 @@ function HomeScreen({ navigation }: HomeProps) {
   };
 
   const handleCashOut = () => {
-    // Open send payment modal
-    setShowSendPayment(true);
+    // Show options: Send or Sell
+    setShowOffRamp(true);
   };
 
   const handleDeposit = () => {
     console.log('Deposit pressed');
-    // Fund testnet account if no balance
-    if (wallet.wallet && parseFloat(wallet.balance) === 0) {
-      wallet.fundTestnetAccount();
-    }
+    // Show On-Ramp screen for buying crypto
+    setShowOnRamp(true);
   };
 
   // Parse balance as number
@@ -99,6 +101,26 @@ function HomeScreen({ navigation }: HomeProps) {
         onRequestClose={() => setShowSendPayment(false)}
       >
         <SendPaymentScreen onClose={() => setShowSendPayment(false)} />
+      </Modal>
+
+      {/* On-Ramp Modal (Buy Crypto) */}
+      <Modal
+        visible={showOnRamp}
+        animationType="slide"
+        presentationStyle="pageSheet"
+        onRequestClose={() => setShowOnRamp(false)}
+      >
+        <OnRampScreen onClose={() => setShowOnRamp(false)} />
+      </Modal>
+
+      {/* Off-Ramp Modal (Sell Crypto) */}
+      <Modal
+        visible={showOffRamp}
+        animationType="slide"
+        presentationStyle="pageSheet"
+        onRequestClose={() => setShowOffRamp(false)}
+      >
+        <OffRampScreen onClose={() => setShowOffRamp(false)} />
       </Modal>
     </View>
   );
