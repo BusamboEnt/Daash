@@ -1,16 +1,23 @@
 -- Daash Wallet Database Schema - Updated for Wallet-based Users
 -- Run this in your Supabase SQL Editor to update the schema
 
--- First, drop the existing users table constraint
+-- Step 1: Drop all foreign key constraints that reference users.id
+ALTER TABLE IF EXISTS public.wallets DROP CONSTRAINT IF EXISTS wallets_user_id_fkey;
+ALTER TABLE IF EXISTS public.kyc_verifications DROP CONSTRAINT IF EXISTS kyc_verifications_user_id_fkey;
+ALTER TABLE IF EXISTS public.kyc_documents DROP CONSTRAINT IF EXISTS kyc_documents_user_id_fkey;
+ALTER TABLE IF EXISTS public.transactions DROP CONSTRAINT IF EXISTS transactions_user_id_fkey;
+ALTER TABLE IF EXISTS public.ramp_transactions DROP CONSTRAINT IF EXISTS ramp_transactions_user_id_fkey;
+ALTER TABLE IF EXISTS public.user_settings DROP CONSTRAINT IF EXISTS user_settings_user_id_fkey;
+
+-- Step 2: Drop the users table primary key and auth foreign key
 ALTER TABLE IF EXISTS public.users DROP CONSTRAINT IF EXISTS users_pkey;
 ALTER TABLE IF EXISTS public.users DROP CONSTRAINT IF EXISTS users_id_fkey;
 
--- Drop existing users table (if needed - be careful in production!)
--- Uncomment only if you want to start fresh:
--- DROP TABLE IF EXISTS public.users CASCADE;
+-- Step 3: Drop and recreate users table
+DROP TABLE IF EXISTS public.users CASCADE;
 
--- Recreate users table with auto-generated UUID (not tied to auth.users)
-CREATE TABLE IF NOT EXISTS public.users (
+-- Step 4: Create new users table with auto-generated UUID (not tied to auth.users)
+CREATE TABLE public.users (
   id UUID DEFAULT uuid_generate_v4() PRIMARY KEY,
   stellar_public_key TEXT UNIQUE NOT NULL,
   email TEXT,
@@ -23,14 +30,10 @@ CREATE TABLE IF NOT EXISTS public.users (
   is_active BOOLEAN DEFAULT true
 );
 
--- Enable RLS
+-- Step 5: Enable RLS
 ALTER TABLE public.users ENABLE ROW LEVEL SECURITY;
 
--- Update RLS policies for users table
-DROP POLICY IF EXISTS "Users can view their own data" ON public.users;
-DROP POLICY IF EXISTS "Users can update their own data" ON public.users;
-DROP POLICY IF EXISTS "Users can insert their own data" ON public.users;
-
+-- Step 6: Create RLS policies for wallet-based access
 -- Allow public insert for wallet-based signup
 CREATE POLICY "Anyone can create user with stellar key"
   ON public.users FOR INSERT
@@ -46,9 +49,45 @@ CREATE POLICY "Users can update their own data by stellar key"
   ON public.users FOR UPDATE
   USING (true);
 
--- Create index on stellar_public_key for faster lookups
-CREATE INDEX IF NOT EXISTS idx_users_stellar_public_key ON public.users(stellar_public_key);
+-- Step 7: Create index on stellar_public_key for faster lookups
+CREATE INDEX idx_users_stellar_public_key ON public.users(stellar_public_key);
 
--- Make sure updated_at trigger exists
-CREATE TRIGGER update_users_updated_at BEFORE UPDATE ON public.users
-  FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
+-- Step 8: Recreate foreign key constraints
+ALTER TABLE public.wallets
+  ADD CONSTRAINT wallets_user_id_fkey
+  FOREIGN KEY (user_id) REFERENCES public.users(id) ON DELETE CASCADE;
+
+ALTER TABLE public.kyc_verifications
+  ADD CONSTRAINT kyc_verifications_user_id_fkey
+  FOREIGN KEY (user_id) REFERENCES public.users(id) ON DELETE CASCADE;
+
+ALTER TABLE public.kyc_documents
+  ADD CONSTRAINT kyc_documents_user_id_fkey
+  FOREIGN KEY (user_id) REFERENCES public.users(id) ON DELETE CASCADE;
+
+ALTER TABLE public.transactions
+  ADD CONSTRAINT transactions_user_id_fkey
+  FOREIGN KEY (user_id) REFERENCES public.users(id) ON DELETE CASCADE;
+
+ALTER TABLE public.ramp_transactions
+  ADD CONSTRAINT ramp_transactions_user_id_fkey
+  FOREIGN KEY (user_id) REFERENCES public.users(id) ON DELETE CASCADE;
+
+ALTER TABLE public.user_settings
+  ADD CONSTRAINT user_settings_user_id_fkey
+  FOREIGN KEY (user_id) REFERENCES public.users(id) ON DELETE CASCADE;
+
+-- Step 9: Create updated_at trigger function if it doesn't exist
+CREATE OR REPLACE FUNCTION update_updated_at_column()
+RETURNS TRIGGER AS $$
+BEGIN
+  NEW.updated_at = NOW();
+  RETURN NEW;
+END;
+$$ language 'plpgsql';
+
+-- Step 10: Add updated_at trigger to users table
+CREATE TRIGGER update_users_updated_at
+  BEFORE UPDATE ON public.users
+  FOR EACH ROW
+  EXECUTE FUNCTION update_updated_at_column();
