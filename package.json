@@ -15,7 +15,7 @@
     "@stellar/stellar-sdk": "^14.3.1",
     "buffer": "^6.0.3",
     "events": "^3.3.0",
-    "expo": "^54.0.23",
+    "expo": "~51.0.0",
     "expo-secure-store": "^15.0.7",
     "expo-status-bar": "~1.12.1",
     "https-browserify": "^1.0.0",
