@@ -1,3 +1,6 @@
+// IMPORTANT: This must be the first import for crypto support
+import 'react-native-get-random-values';
+
 import React, { useEffect, useState } from 'react';
 import { View, Text, StyleSheet, ImageBackground, ScrollView, Modal } from 'react-native';
 import { NavigationContainer } from '@react-navigation/native';
