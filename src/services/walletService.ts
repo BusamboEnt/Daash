@@ -1,4 +1,4 @@
-import * as StellarSdk from '@stellar/stellar-sdk';
+import * as StellarSdk from '@stellar/stellar-sdk/no-eventsource';
 import { SecureStorageService } from './secureStorage';
 import { StellarWallet } from '../types/wallet';
 

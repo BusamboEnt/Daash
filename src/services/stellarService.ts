@@ -1,4 +1,4 @@
-import * as StellarSdk from '@stellar/stellar-sdk';
+import * as StellarSdk from '@stellar/stellar-sdk/no-eventsource';
 import { WalletAccount, WalletBalance, Transaction } from '../types/wallet';
 
 // Use Testnet for development
