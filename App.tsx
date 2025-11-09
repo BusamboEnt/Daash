@@ -3,7 +3,6 @@ import { View, Text, StyleSheet, ImageBackground } from 'react-native';
 import { NavigationContainer } from '@react-navigation/native';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import type { BottomTabScreenProps } from '@react-navigation/bottom-tabs';
-import { Ionicons } from '@expo/vector-icons';
 
 type TabParamList = {
   Home: undefined;
@@ -87,29 +86,33 @@ export default function App() {
           screenOptions={({ route }) => ({
             headerShown: false,
             tabBarStyle: styles.tabBar,
-            tabBarShowLabel: false,
-            tabBarIcon: ({ focused, color, size }) => {
-              let iconName: keyof typeof Ionicons.glyphMap;
-
-              if (route.name === 'Home') {
-                iconName = focused ? 'home' : 'home-outline';
-              } else if (route.name === 'Search') {
-                iconName = focused ? 'search' : 'search-outline';
-              } else if (route.name === 'Profile') {
-                iconName = focused ? 'person-circle' : 'person-circle-outline';
-              } else {
-                iconName = 'help-outline';
-              }
-
-              return <Ionicons name={iconName} size={26} color={color} />;
-            },
+            tabBarShowLabel: true,
+            tabBarLabelStyle: styles.tabBarLabel,
             tabBarActiveTintColor: '#FFFFFF',
             tabBarInactiveTintColor: '#8E8E93',
           })}
         >
-          <Tab.Screen name="Home" component={HomeScreen} />
-          <Tab.Screen name="Search" component={SearchScreen} />
-          <Tab.Screen name="Profile" component={ProfileScreen} />
+          <Tab.Screen
+            name="Home"
+            component={HomeScreen}
+            options={{
+              tabBarLabel: 'Home',
+            }}
+          />
+          <Tab.Screen
+            name="Search"
+            component={SearchScreen}
+            options={{
+              tabBarLabel: 'Search',
+            }}
+          />
+          <Tab.Screen
+            name="Profile"
+            component={ProfileScreen}
+            options={{
+              tabBarLabel: 'Profile',
+            }}
+          />
         </Tab.Navigator>
       </NavigationContainer>
   );
@@ -183,5 +186,10 @@ const styles = StyleSheet.create({
     },
     shadowOpacity: 0.25,
     shadowRadius: 15,
+  },
+  tabBarLabel: {
+    fontSize: 12,
+    fontWeight: '600',
+    marginBottom: 5,
   },
 });
