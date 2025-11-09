@@ -13,7 +13,7 @@ const Header: React.FC<HeaderProps> = ({ onSearch, onMenuPress }) => {
     <SafeAreaView style={styles.safeArea}>
       <View style={styles.headerContainer}>
         <SearchBar
-          placeholder="Sambo Search"
+          placeholder="Daash Search"
           onSearch={onSearch}
         />
         <MenuButton onPress={onMenuPress} />
