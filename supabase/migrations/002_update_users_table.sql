@@ -52,6 +52,36 @@ CREATE POLICY "Users can update their own data by stellar key"
 -- Step 7: Create index on stellar_public_key for faster lookups
 CREATE INDEX idx_users_stellar_public_key ON public.users(stellar_public_key);
 
+-- Step 7b: Update RLS policies for kyc_verifications table to work without auth
+DROP POLICY IF EXISTS "Users can view their own KYC" ON public.kyc_verifications;
+DROP POLICY IF EXISTS "Users can insert their own KYC" ON public.kyc_verifications;
+DROP POLICY IF EXISTS "Users can update their own KYC" ON public.kyc_verifications;
+
+-- Allow anyone to view, insert, and update KYC (will add proper security later)
+CREATE POLICY "Anyone can view KYC"
+  ON public.kyc_verifications FOR SELECT
+  USING (true);
+
+CREATE POLICY "Anyone can insert KYC"
+  ON public.kyc_verifications FOR INSERT
+  WITH CHECK (true);
+
+CREATE POLICY "Anyone can update KYC"
+  ON public.kyc_verifications FOR UPDATE
+  USING (true);
+
+-- Update RLS policies for kyc_documents table
+DROP POLICY IF EXISTS "Users can view their own KYC documents" ON public.kyc_documents;
+DROP POLICY IF EXISTS "Users can insert their own KYC documents" ON public.kyc_documents;
+
+CREATE POLICY "Anyone can view KYC documents"
+  ON public.kyc_documents FOR SELECT
+  USING (true);
+
+CREATE POLICY "Anyone can insert KYC documents"
+  ON public.kyc_documents FOR INSERT
+  WITH CHECK (true);
+
 -- Step 8: Recreate foreign key constraints
 ALTER TABLE public.wallets
   ADD CONSTRAINT wallets_user_id_fkey
