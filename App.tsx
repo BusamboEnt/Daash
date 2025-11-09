@@ -5,6 +5,7 @@ import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import type { BottomTabScreenProps } from '@react-navigation/bottom-tabs';
 import { Home, Search, User } from 'lucide-react-native';
 import { Header, AdvancedBalanceCard } from './src/components';
+import { WalletProvider, useWallet } from './src/context/WalletContext';
 
 type TabParamList = {
   Home: undefined;
@@ -19,6 +20,8 @@ type ProfileProps = BottomTabScreenProps<TabParamList, 'Profile'>;
 const Tab = createBottomTabNavigator<TabParamList>();
 
 function HomeScreen({ navigation }: HomeProps) {
+  const wallet = useWallet();
+
   const handleSearch = (text: string) => {
     console.log('Search:', text);
   };
@@ -29,27 +32,45 @@ function HomeScreen({ navigation }: HomeProps) {
 
   const handleCashOut = () => {
     console.log('Cash out pressed');
+    // TODO: Implement cash out functionality
   };
 
   const handleDeposit = () => {
     console.log('Deposit pressed');
+    // Fund testnet account if no balance
+    if (wallet.wallet && parseFloat(wallet.balance) === 0) {
+      wallet.fundTestnetAccount();
+    }
   };
+
+  // Parse balance as number
+  const balanceNumber = parseFloat(wallet.balance) || 0;
 
   return (
     <View style={styles.screenContainer}>
       <Header onSearch={handleSearch} onMenuPress={handleMenuPress} />
       <ScrollView style={styles.scrollView} showsVerticalScrollIndicator={false}>
         <AdvancedBalanceCard
-          balance={58892.05}
-          currency="R"
+          balance={balanceNumber}
+          currency="XLM"
           percentageChange={12.76}
           onCashOut={handleCashOut}
           onDeposit={handleDeposit}
           showEyeIcon={true}
+          isLoading={wallet.isLoading}
         />
         <View style={styles.content}>
           <Text style={styles.title}>Welcome to Daash!</Text>
-          <Text style={styles.text}>Manage your finances with ease</Text>
+          <Text style={styles.text}>
+            {wallet.wallet
+              ? 'Your Stellar wallet is ready'
+              : 'Create a wallet to get started'}
+          </Text>
+          {wallet.wallet && (
+            <Text style={styles.publicKeyText} numberOfLines={1} ellipsizeMode="middle">
+              {wallet.wallet.publicKey}
+            </Text>
+          )}
         </View>
       </ScrollView>
     </View>
@@ -111,7 +132,8 @@ export default function App() {
     return <SplashScreen />;
   }
   return (
-    <NavigationContainer>
+    <WalletProvider>
+      <NavigationContainer>
         <Tab.Navigator
           screenOptions={({ route }) => ({
             headerShown: false,
@@ -136,6 +158,7 @@ export default function App() {
           <Tab.Screen name="Profile" component={ProfileScreen} />
         </Tab.Navigator>
       </NavigationContainer>
+    </WalletProvider>
   );
 }
 
@@ -175,6 +198,14 @@ const styles = StyleSheet.create({
     textAlign: 'center',
     color: '#FFFFFF',
     marginTop: 10,
+  },
+  publicKeyText: {
+    fontSize: 12,
+    textAlign: 'center',
+    color: '#F5F5F5',
+    marginTop: 8,
+    fontFamily: 'monospace',
+    opacity: 0.8,
   },
   infoContainer: {
     flexDirection: 'row',
