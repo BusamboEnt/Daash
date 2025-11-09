@@ -78,12 +78,26 @@ echo ".env" >> .gitignore
 ### KYC Documents Bucket
 - **Name**: `kyc-documents`
 - **Public**: ❌ No (keep private)
+- **File size limit**: 5 MB
 - Click "Create bucket"
+
+**To set file size limit:**
+1. Click on the `kyc-documents` bucket
+2. Go to "Configuration" tab
+3. Set "File size limit" to `5 MB`
+4. Click "Save"
 
 ### Avatars Bucket
 - **Name**: `avatars`
 - **Public**: ✅ Yes (for profile pictures)
+- **File size limit**: 10 MB
 - Click "Create bucket"
+
+**To set file size limit:**
+1. Click on the `avatars` bucket
+2. Go to "Configuration" tab
+3. Set "File size limit" to `10 MB`
+4. Click "Save"
 
 ### Configure Storage Policies
 

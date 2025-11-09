@@ -198,6 +198,17 @@ export default function KYCScreen({ onComplete, onCancel }: KYCScreenProps) {
               <CheckCircle size={20} color="#10B981" />
               <Text style={styles.requirementText}>Selfie for identity verification</Text>
             </View>
+            <View style={styles.fileRequirementsNote}>
+              <Text style={styles.noteText}>
+                • Maximum file size: 5 MB per document
+              </Text>
+              <Text style={styles.noteText}>
+                • Accepted formats: JPG, PNG, WebP, PDF
+              </Text>
+              <Text style={styles.noteText}>
+                • Ensure documents are clear and readable
+              </Text>
+            </View>
           </View>
         )}
 
@@ -344,6 +355,18 @@ const styles = StyleSheet.create({
     fontSize: 16,
     color: '#F5F5F5',
     lineHeight: 22,
+  },
+  fileRequirementsNote: {
+    marginTop: 16,
+    paddingTop: 16,
+    borderTopWidth: 1,
+    borderTopColor: 'rgba(255, 255, 255, 0.2)',
+  },
+  noteText: {
+    fontSize: 14,
+    color: '#F5F5F5',
+    marginBottom: 8,
+    opacity: 0.9,
   },
   buttonContainer: {
     gap: 12,
