@@ -48,19 +48,28 @@ export class StellarService {
       console.log('Friendbot response status:', response.status);
       console.log('Friendbot response:', responseText.substring(0, 200));
 
+      // Parse response as JSON to check for specific error messages
+      let responseJson: any = null;
+      try {
+        responseJson = JSON.parse(responseText);
+      } catch (e) {
+        // Response might not be JSON
+      }
+
+      // Check if account was already funded (this is actually a success case)
+      if (response.status === 400 && responseJson?.detail?.includes('already funded')) {
+        console.log('Account was already funded previously - this is OK');
+        return;
+      }
+
+      // Check for other errors
       if (!response.ok) {
         throw new Error(
           `Friendbot returned status ${response.status}: ${responseText.substring(0, 100)}`
         );
       }
 
-      // Try to parse as JSON
-      try {
-        JSON.parse(responseText);
-        console.log('Account funded successfully via Friendbot');
-      } catch (e) {
-        console.warn('Friendbot response was not JSON:', responseText.substring(0, 100));
-      }
+      console.log('Account funded successfully via Friendbot');
     } catch (error: any) {
       console.error('Error funding testnet account:', error);
       const errorMessage = error?.message || 'Unknown error';
