@@ -42,39 +42,24 @@ export class StellarService {
       const friendbotUrl = `https://friendbot.stellar.org?addr=${encodeURIComponent(publicKey)}`;
       console.log('Attempting to fund account via Friendbot:', friendbotUrl);
 
-      const controller = new AbortController();
-      const timeoutId = setTimeout(() => controller.abort(), 30000); // 30 second timeout
+      const response = await fetch(friendbotUrl);
 
+      const responseText = await response.text();
+      console.log('Friendbot response status:', response.status);
+      console.log('Friendbot response:', responseText.substring(0, 200));
+
+      if (!response.ok) {
+        throw new Error(
+          `Friendbot returned status ${response.status}: ${responseText.substring(0, 100)}`
+        );
+      }
+
+      // Try to parse as JSON
       try {
-        const response = await fetch(friendbotUrl, {
-          signal: controller.signal,
-        });
-
-        clearTimeout(timeoutId);
-
-        const responseText = await response.text();
-        console.log('Friendbot response status:', response.status);
-        console.log('Friendbot response:', responseText.substring(0, 200));
-
-        if (!response.ok) {
-          throw new Error(
-            `Friendbot returned status ${response.status}: ${responseText.substring(0, 100)}`
-          );
-        }
-
-        // Try to parse as JSON
-        try {
-          JSON.parse(responseText);
-          console.log('Account funded successfully via Friendbot');
-        } catch (e) {
-          console.warn('Friendbot response was not JSON:', responseText.substring(0, 100));
-        }
-      } catch (fetchError: any) {
-        clearTimeout(timeoutId);
-        if (fetchError.name === 'AbortError') {
-          throw new Error('Friendbot request timed out after 30 seconds');
-        }
-        throw fetchError;
+        JSON.parse(responseText);
+        console.log('Account funded successfully via Friendbot');
+      } catch (e) {
+        console.warn('Friendbot response was not JSON:', responseText.substring(0, 100));
       }
     } catch (error: any) {
       console.error('Error funding testnet account:', error);
