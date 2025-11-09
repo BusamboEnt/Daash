@@ -3,6 +3,7 @@ import { View, Text, StyleSheet, ImageBackground } from 'react-native';
 import { NavigationContainer } from '@react-navigation/native';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import type { BottomTabScreenProps } from '@react-navigation/bottom-tabs';
+import { Home, Search, User } from 'lucide-react-native';
 
 type TabParamList = {
   Home: undefined;
@@ -86,33 +87,24 @@ export default function App() {
           screenOptions={({ route }) => ({
             headerShown: false,
             tabBarStyle: styles.tabBar,
-            tabBarShowLabel: true,
-            tabBarLabelStyle: styles.tabBarLabel,
+            tabBarShowLabel: false,
+            tabBarIcon: ({ focused, color, size }) => {
+              if (route.name === 'Home') {
+                return <Home color={color} size={26} />;
+              } else if (route.name === 'Search') {
+                return <Search color={color} size={26} />;
+              } else if (route.name === 'Profile') {
+                return <User color={color} size={26} />;
+              }
+              return null;
+            },
             tabBarActiveTintColor: '#FFFFFF',
             tabBarInactiveTintColor: '#8E8E93',
           })}
         >
-          <Tab.Screen
-            name="Home"
-            component={HomeScreen}
-            options={{
-              tabBarLabel: 'Home',
-            }}
-          />
-          <Tab.Screen
-            name="Search"
-            component={SearchScreen}
-            options={{
-              tabBarLabel: 'Search',
-            }}
-          />
-          <Tab.Screen
-            name="Profile"
-            component={ProfileScreen}
-            options={{
-              tabBarLabel: 'Profile',
-            }}
-          />
+          <Tab.Screen name="Home" component={HomeScreen} />
+          <Tab.Screen name="Search" component={SearchScreen} />
+          <Tab.Screen name="Profile" component={ProfileScreen} />
         </Tab.Navigator>
       </NavigationContainer>
   );
@@ -186,10 +178,5 @@ const styles = StyleSheet.create({
     },
     shadowOpacity: 0.25,
     shadowRadius: 15,
-  },
-  tabBarLabel: {
-    fontSize: 12,
-    fontWeight: '600',
-    marginBottom: 5,
   },
 });
