@@ -125,29 +125,30 @@ export default function App() {
 const styles = StyleSheet.create({
   screenContainer: {
     flex: 1,
-    backgroundColor: '#fff',
+    backgroundColor: '#8A784E',
   },
   container: {
     flex: 1,
     alignItems: 'center',
     justifyContent: 'center',
-    backgroundColor: '#fff',
+    backgroundColor: '#8A784E',
     padding: 20,
   },
   title: {
     fontSize: 32,
     fontWeight: 'bold',
     marginBottom: 10,
+    color: '#FFFFFF',
   },
   subtitle: {
     fontSize: 20,
-    color: '#666',
+    color: '#F5F5F5',
     marginBottom: 20,
   },
   text: {
     fontSize: 16,
     textAlign: 'center',
-    color: '#333',
+    color: '#FFFFFF',
     marginTop: 10,
   },
   infoContainer: {
