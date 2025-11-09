@@ -1,10 +1,10 @@
 import React, { useEffect, useState } from 'react';
-import { View, Text, StyleSheet, ImageBackground } from 'react-native';
+import { View, Text, StyleSheet, ImageBackground, ScrollView } from 'react-native';
 import { NavigationContainer } from '@react-navigation/native';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import type { BottomTabScreenProps } from '@react-navigation/bottom-tabs';
 import { Home, Search, User } from 'lucide-react-native';
-import { Header } from './src/components';
+import { Header, AdvancedBalanceCard } from './src/components';
 
 type TabParamList = {
   Home: undefined;
@@ -27,14 +27,31 @@ function HomeScreen({ navigation }: HomeProps) {
     console.log('Menu pressed');
   };
 
+  const handleCashOut = () => {
+    console.log('Cash out pressed');
+  };
+
+  const handleDeposit = () => {
+    console.log('Deposit pressed');
+  };
+
   return (
     <View style={styles.screenContainer}>
       <Header onSearch={handleSearch} onMenuPress={handleMenuPress} />
-      <View style={styles.container}>
-        <Text style={styles.title}>Home Screen</Text>
-        <Text style={styles.subtitle}>Welcome to Daash!</Text>
-        <Text style={styles.text}>This is a React Native app with TypeScript and Bottom Tab Navigation</Text>
-      </View>
+      <ScrollView style={styles.scrollView} showsVerticalScrollIndicator={false}>
+        <AdvancedBalanceCard
+          balance={58892.05}
+          currency="R"
+          percentageChange={12.76}
+          onCashOut={handleCashOut}
+          onDeposit={handleDeposit}
+          showEyeIcon={true}
+        />
+        <View style={styles.content}>
+          <Text style={styles.title}>Welcome to Daash!</Text>
+          <Text style={styles.text}>Manage your finances with ease</Text>
+        </View>
+      </ScrollView>
     </View>
   );
 }
@@ -126,6 +143,14 @@ const styles = StyleSheet.create({
   screenContainer: {
     flex: 1,
     backgroundColor: '#8A784E',
+  },
+  scrollView: {
+    flex: 1,
+  },
+  content: {
+    padding: 20,
+    marginTop: 20,
+    alignItems: 'center',
   },
   container: {
     flex: 1,
