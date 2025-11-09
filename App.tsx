@@ -4,6 +4,7 @@ import { NavigationContainer } from '@react-navigation/native';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import type { BottomTabScreenProps } from '@react-navigation/bottom-tabs';
 import { Home, Search, User } from 'lucide-react-native';
+import { Header } from './src/components';
 
 type TabParamList = {
   Home: undefined;
@@ -18,11 +19,22 @@ type ProfileProps = BottomTabScreenProps<TabParamList, 'Profile'>;
 const Tab = createBottomTabNavigator<TabParamList>();
 
 function HomeScreen({ navigation }: HomeProps) {
+  const handleSearch = (text: string) => {
+    console.log('Search:', text);
+  };
+
+  const handleMenuPress = () => {
+    console.log('Menu pressed');
+  };
+
   return (
-    <View style={styles.container}>
-      <Text style={styles.title}>Home Screen</Text>
-      <Text style={styles.subtitle}>Welcome to Daash!</Text>
-      <Text style={styles.text}>This is a React Native app with TypeScript and Bottom Tab Navigation</Text>
+    <View style={styles.screenContainer}>
+      <Header onSearch={handleSearch} onMenuPress={handleMenuPress} />
+      <View style={styles.container}>
+        <Text style={styles.title}>Home Screen</Text>
+        <Text style={styles.subtitle}>Welcome to Daash!</Text>
+        <Text style={styles.text}>This is a React Native app with TypeScript and Bottom Tab Navigation</Text>
+      </View>
     </View>
   );
 }
@@ -111,6 +123,10 @@ export default function App() {
 }
 
 const styles = StyleSheet.create({
+  screenContainer: {
+    flex: 1,
+    backgroundColor: '#fff',
+  },
   container: {
     flex: 1,
     alignItems: 'center',
