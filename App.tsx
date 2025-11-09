@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { View, Text, StyleSheet } from 'react-native';
+import { View, Text, StyleSheet, ImageBackground } from 'react-native';
 import { NavigationContainer } from '@react-navigation/native';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import type { BottomTabScreenProps } from '@react-navigation/bottom-tabs';
@@ -55,9 +55,13 @@ function ProfileScreen({ navigation }: ProfileProps) {
 
 function SplashScreen() {
   return (
-    <View style={styles.splashContainer}>
+    <ImageBackground
+      source={require('./assets/splashscreen.png')}
+      style={styles.splashContainer}
+      resizeMode="cover"
+    >
       <Text style={styles.splashText}>Daash</Text>
-    </View>
+    </ImageBackground>
   );
 }
 
@@ -163,7 +167,6 @@ const styles = StyleSheet.create({
   },
   splashContainer: {
     flex: 1,
-    backgroundColor: '#5D5D5D',
     alignItems: 'center',
     justifyContent: 'center',
   },
