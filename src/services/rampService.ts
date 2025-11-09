@@ -1,4 +1,5 @@
 import { RampTransaction, RampType, RampStatus, KYCInfo, KYCStatus, KYCLevel } from '../types/wallet';
+import { SupabaseService } from './supabaseService';
 
 // Ramp Network Configuration
 const RAMP_CONFIG = {
@@ -21,9 +22,6 @@ export class RampService {
     cryptoAsset: string = 'STELLAR_XLM'
   ): Promise<RampTransaction> {
     try {
-      // In production, this would open the Ramp Network widget
-      // For now, we'll simulate the transaction creation
-
       const transaction: RampTransaction = {
         id: `ramp_${Date.now()}`,
         providerId: 'ramp_network',
@@ -38,6 +36,24 @@ export class RampService {
       };
 
       console.log('Initiating on-ramp transaction:', transaction);
+
+      // Save to Supabase if configured
+      if (SupabaseService.isConfigured()) {
+        const user = await SupabaseService.getCurrentUser();
+        if (user) {
+          await SupabaseService.saveRampTransaction(user.id, {
+            provider: transaction.providerId,
+            ramp_type: 'on_ramp',
+            fiat_amount: transaction.fiatAmount,
+            fiat_currency: transaction.fiatCurrency,
+            crypto_amount: parseFloat(transaction.cryptoAmount),
+            crypto_asset: transaction.cryptoAsset,
+            status: transaction.status,
+            redirect_url: transaction.redirectUrl,
+          });
+        }
+      }
+
       return transaction;
     } catch (error) {
       console.error('Error initiating on-ramp:', error);
@@ -69,6 +85,23 @@ export class RampService {
       };
 
       console.log('Initiating off-ramp transaction:', transaction);
+
+      // Save to Supabase if configured
+      if (SupabaseService.isConfigured()) {
+        const user = await SupabaseService.getCurrentUser();
+        if (user) {
+          await SupabaseService.saveRampTransaction(user.id, {
+            provider: transaction.providerId,
+            ramp_type: 'off_ramp',
+            fiat_amount: transaction.fiatAmount,
+            fiat_currency: transaction.fiatCurrency,
+            crypto_amount: parseFloat(transaction.cryptoAmount),
+            crypto_asset: transaction.cryptoAsset,
+            status: transaction.status,
+          });
+        }
+      }
+
       return transaction;
     } catch (error) {
       console.error('Error initiating off-ramp:', error);
@@ -122,8 +155,16 @@ export class RampService {
    */
   static async getKYCStatus(userId: string): Promise<KYCInfo> {
     try {
-      // In production, this would query your backend/KYC provider
-      // For now, we'll return a mock status
+      // Try to get from Supabase if configured
+      if (SupabaseService.isConfigured()) {
+        const kycInfo = await SupabaseService.getKYCVerification(userId);
+        if (kycInfo) {
+          console.log('KYC status from Supabase:', kycInfo);
+          return kycInfo;
+        }
+      }
+
+      // Fallback to mock data if Supabase not configured
       const kycInfo: KYCInfo = {
         userId,
         status: KYCStatus.NOT_STARTED,
@@ -139,7 +180,7 @@ export class RampService {
         lastUpdated: new Date(),
       };
 
-      console.log('KYC status for user:', kycInfo);
+      console.log('KYC status (mock):', kycInfo);
       return kycInfo;
     } catch (error) {
       console.error('Error getting KYC status:', error);
