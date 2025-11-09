@@ -211,10 +211,37 @@ export class SupabaseService {
   }
 
   /**
-   * Get or create KYC verification
+   * Get or create KYC verification (by Stellar public key)
    */
-  static async getKYCVerification(userId: string): Promise<KYCInfo | null> {
+  static async getKYCVerification(stellarPublicKey: string): Promise<KYCInfo | null> {
     try {
+      // First, get or create the user by stellar public key
+      const user = await this.getUserByStellarKey(stellarPublicKey);
+      let userId: string;
+
+      if (!user) {
+        // User doesn't exist, create one
+        // For now, create a user without Supabase auth (anonymous user)
+        // In production, this would be created during sign-up
+        const { data: newUser, error: userError } = await supabase
+          .from(TABLES.USERS)
+          .insert({
+            stellar_public_key: stellarPublicKey,
+            is_active: true,
+          })
+          .select()
+          .single();
+
+        if (userError) {
+          console.error('Error creating user:', userError);
+          return null;
+        }
+        userId = newUser.id;
+      } else {
+        userId = user.id;
+      }
+
+      // Now get or create KYC verification
       const { data, error } = await supabase
         .from(TABLES.KYC)
         .select('*')
@@ -252,17 +279,24 @@ export class SupabaseService {
   }
 
   /**
-   * Update KYC verification
+   * Update KYC verification (by Stellar public key)
    */
   static async updateKYCVerification(
-    userId: string,
+    stellarPublicKey: string,
     updates: Partial<DatabaseKYC>
   ): Promise<KYCInfo | null> {
     try {
+      // Get user ID from stellar public key
+      const user = await this.getUserByStellarKey(stellarPublicKey);
+      if (!user) {
+        console.error('User not found for stellar public key');
+        return null;
+      }
+
       const { data, error } = await supabase
         .from(TABLES.KYC)
         .update(updates)
-        .eq('user_id', userId)
+        .eq('user_id', user.id)
         .select()
         .single();
 
