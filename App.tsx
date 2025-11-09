@@ -1,11 +1,13 @@
 import React, { useEffect, useState } from 'react';
-import { View, Text, StyleSheet, ImageBackground, ScrollView } from 'react-native';
+import { View, Text, StyleSheet, ImageBackground, ScrollView, Modal } from 'react-native';
 import { NavigationContainer } from '@react-navigation/native';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import type { BottomTabScreenProps } from '@react-navigation/bottom-tabs';
 import { Home, Search, User } from 'lucide-react-native';
-import { Header, AdvancedBalanceCard } from './src/components';
+import { Header, AdvancedBalanceCard, TransactionList } from './src/components';
 import { WalletProvider, useWallet } from './src/context/WalletContext';
+import WalletSetupScreen from './src/screens/WalletSetupScreen';
+import SendPaymentScreen from './src/screens/SendPaymentScreen';
 
 type TabParamList = {
   Home: undefined;
@@ -21,6 +23,7 @@ const Tab = createBottomTabNavigator<TabParamList>();
 
 function HomeScreen({ navigation }: HomeProps) {
   const wallet = useWallet();
+  const [showSendPayment, setShowSendPayment] = useState(false);
 
   const handleSearch = (text: string) => {
     console.log('Search:', text);
@@ -31,8 +34,8 @@ function HomeScreen({ navigation }: HomeProps) {
   };
 
   const handleCashOut = () => {
-    console.log('Cash out pressed');
-    // TODO: Implement cash out functionality
+    // Open send payment modal
+    setShowSendPayment(true);
   };
 
   const handleDeposit = () => {
@@ -45,6 +48,17 @@ function HomeScreen({ navigation }: HomeProps) {
 
   // Parse balance as number
   const balanceNumber = parseFloat(wallet.balance) || 0;
+
+  // Show wallet setup if no wallet
+  if (!wallet.wallet && wallet.isInitialized) {
+    return (
+      <WalletSetupScreen
+        onComplete={() => {
+          // Wallet created, refresh will happen automatically
+        }}
+      />
+    );
+  }
 
   return (
     <View style={styles.screenContainer}>
@@ -73,16 +87,39 @@ function HomeScreen({ navigation }: HomeProps) {
           )}
         </View>
       </ScrollView>
+
+      {/* Send Payment Modal */}
+      <Modal
+        visible={showSendPayment}
+        animationType="slide"
+        presentationStyle="pageSheet"
+        onRequestClose={() => setShowSendPayment(false)}
+      >
+        <SendPaymentScreen onClose={() => setShowSendPayment(false)} />
+      </Modal>
     </View>
   );
 }
 
 function SearchScreen({ navigation }: SearchProps) {
+  const wallet = useWallet();
+
+  if (!wallet.wallet) {
+    return (
+      <View style={styles.emptyStateContainer}>
+        <Search size={64} color="#9CA3AF" />
+        <Text style={styles.emptyStateText}>No wallet found</Text>
+        <Text style={styles.emptyStateSubtext}>Create a wallet to view transactions</Text>
+      </View>
+    );
+  }
+
   return (
-    <View style={styles.container}>
-      <Text style={styles.title}>Search Screen</Text>
-      <Text style={styles.subtitle}>Find what you need</Text>
-      <Text style={styles.text}>Search functionality goes here</Text>
+    <View style={styles.screenContainer}>
+      <View style={styles.transactionHeader}>
+        <Text style={styles.transactionTitle}>Transactions</Text>
+      </View>
+      <TransactionList publicKey={wallet.wallet.publicKey} />
     </View>
   );
 }
@@ -251,5 +288,33 @@ const styles = StyleSheet.create({
     },
     shadowOpacity: 0.25,
     shadowRadius: 15,
+  },
+  transactionHeader: {
+    padding: 20,
+    paddingTop: 60,
+  },
+  transactionTitle: {
+    fontSize: 28,
+    fontWeight: 'bold',
+    color: '#FFFFFF',
+  },
+  emptyStateContainer: {
+    flex: 1,
+    backgroundColor: '#8A784E',
+    justifyContent: 'center',
+    alignItems: 'center',
+    padding: 40,
+  },
+  emptyStateText: {
+    fontSize: 20,
+    fontWeight: '600',
+    color: '#FFFFFF',
+    marginTop: 20,
+  },
+  emptyStateSubtext: {
+    fontSize: 16,
+    color: '#F5F5F5',
+    marginTop: 8,
+    textAlign: 'center',
   },
 });
