@@ -275,6 +275,49 @@ export class SupabaseService {
   }
 
   /**
+   * Save KYC document metadata
+   */
+  static async saveKYCDocument(
+    kycVerificationId: string,
+    document: {
+      document_type: string;
+      file_path: string;
+      file_name: string;
+      file_size: number;
+      mime_type: string;
+      status: string;
+    }
+  ): Promise<boolean> {
+    try {
+      // First, get the user_id from the KYC verification
+      const { data: kycData, error: kycError } = await supabase
+        .from(TABLES.KYC)
+        .select('user_id')
+        .eq('id', kycVerificationId)
+        .single();
+
+      if (kycError || !kycData) {
+        console.error('Error getting KYC verification:', kycError);
+        return false;
+      }
+
+      const { error } = await supabase
+        .from(TABLES.KYC_DOCUMENTS)
+        .insert({
+          kyc_verification_id: kycVerificationId,
+          user_id: kycData.user_id,
+          ...document,
+        });
+
+      if (error) throw error;
+      return true;
+    } catch (error) {
+      console.error('Error saving KYC document:', error);
+      return false;
+    }
+  }
+
+  /**
    * Save transaction to database
    */
   static async saveTransaction(

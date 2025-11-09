@@ -7,11 +7,14 @@ import {
   TouchableOpacity,
   Alert,
   ActivityIndicator,
+  Modal,
 } from 'react-native';
 import { Shield, CheckCircle, XCircle, Clock, AlertCircle } from 'lucide-react-native';
 import { useWallet } from '../context/WalletContext';
 import { RampService } from '../services/rampService';
+import { SupabaseService } from '../services/supabaseService';
 import { KYCInfo, KYCStatus, KYCLevel } from '../types/wallet';
+import DocumentUploadScreen from './DocumentUploadScreen';
 
 interface KYCScreenProps {
   onComplete?: () => void;
@@ -22,6 +25,8 @@ export default function KYCScreen({ onComplete, onCancel }: KYCScreenProps) {
   const wallet = useWallet();
   const [kycInfo, setKycInfo] = useState<KYCInfo | null>(null);
   const [isLoading, setIsLoading] = useState(true);
+  const [showUploadScreen, setShowUploadScreen] = useState(false);
+  const [kycVerificationId, setKycVerificationId] = useState<string | null>(null);
 
   useEffect(() => {
     loadKYCStatus();
@@ -33,6 +38,16 @@ export default function KYCScreen({ onComplete, onCancel }: KYCScreenProps) {
       if (wallet.wallet) {
         const status = await RampService.getKYCStatus(wallet.wallet.publicKey);
         setKycInfo(status);
+
+        // Get KYC verification ID if Supabase is configured
+        if (SupabaseService.isConfigured()) {
+          const kycVerification = await SupabaseService.getKYCVerification(wallet.wallet.publicKey);
+          if (kycVerification) {
+            // We need to get the actual ID from the database
+            // For now, use the userId as a placeholder
+            setKycVerificationId(wallet.wallet.publicKey);
+          }
+        }
       }
     } catch (error) {
       console.error('Error loading KYC status:', error);
@@ -43,23 +58,12 @@ export default function KYCScreen({ onComplete, onCancel }: KYCScreenProps) {
   };
 
   const handleStartKYC = () => {
-    Alert.alert(
-      'Start KYC Verification',
-      'You will be redirected to our verification partner to complete your identity verification.',
-      [
-        {
-          text: 'Cancel',
-          style: 'cancel',
-        },
-        {
-          text: 'Continue',
-          onPress: () => {
-            // In production, this would redirect to KYC provider
-            Alert.alert('KYC Flow', 'This would open the KYC verification flow in production');
-          },
-        },
-      ]
-    );
+    setShowUploadScreen(true);
+  };
+
+  const handleUploadComplete = () => {
+    setShowUploadScreen(false);
+    loadKYCStatus(); // Reload KYC status
   };
 
   const getStatusIcon = () => {
@@ -244,6 +248,22 @@ export default function KYCScreen({ onComplete, onCancel }: KYCScreenProps) {
           )}
         </View>
       </View>
+
+      {/* Document Upload Modal */}
+      <Modal
+        visible={showUploadScreen}
+        animationType="slide"
+        presentationStyle="fullScreen"
+      >
+        {wallet.wallet && kycVerificationId && (
+          <DocumentUploadScreen
+            userId={wallet.wallet.publicKey}
+            kycVerificationId={kycVerificationId}
+            onComplete={handleUploadComplete}
+            onCancel={() => setShowUploadScreen(false)}
+          />
+        )}
+      </Modal>
     </ScrollView>
   );
 }
