@@ -19,6 +19,7 @@ import {
   ArrowLeft,
 } from 'lucide-react-native';
 import { useNavigation } from '@react-navigation/native';
+import { DrawerActions } from '@react-navigation/native';
 
 const AboutScreen: React.FC = () => {
   const navigation = useNavigation();
@@ -57,10 +58,7 @@ const AboutScreen: React.FC = () => {
       <View style={styles.header}>
         <TouchableOpacity
           onPress={() => {
-            navigation.navigate('MainTabs' as never);
-            setTimeout(() => {
-              (navigation as any).getParent()?.openDrawer?.();
-            }, 100);
+            navigation.dispatch(DrawerActions.openDrawer());
           }}
           style={styles.backButton}
         >
