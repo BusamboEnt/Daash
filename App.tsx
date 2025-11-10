@@ -10,7 +10,7 @@ import type { BottomTabScreenProps } from '@react-navigation/bottom-tabs';
 import { Home, Search, User } from 'lucide-react-native';
 import { Header, AdvancedBalanceCard, TransactionList, DrawerMenu } from './src/components';
 import { WalletProvider, useWallet } from './src/context/WalletContext';
-import { NotificationProvider } from './src/context/NotificationContext';
+import { NotificationProvider, useNotifications } from './src/context/NotificationContext';
 import NotificationService from './src/services/notificationService';
 import WalletSetupScreen from './src/screens/WalletSetupScreen';
 import SendPaymentScreen from './src/screens/SendPaymentScreen';
@@ -52,6 +52,7 @@ const Drawer = createDrawerNavigator<DrawerParamList>();
 
 function HomeScreen({ navigation }: HomeProps) {
   const wallet = useWallet();
+  const { refreshNotifications } = useNotifications();
   const [showSendPayment, setShowSendPayment] = useState(false);
   const [showOnRamp, setShowOnRamp] = useState(false);
   const [showOffRamp, setShowOffRamp] = useState(false);
@@ -82,6 +83,9 @@ function HomeScreen({ navigation }: HomeProps) {
   const handleTestNotification = async () => {
     // Send a test notification
     await NotificationService.notifyTransaction('received', '10.5', 'XLM');
+    // Refresh to update the badge
+    await refreshNotifications();
+    console.log('Test notification created!');
   };
 
   // Parse balance as number
