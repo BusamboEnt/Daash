@@ -1,7 +1,10 @@
 // Polyfills for React Native
 // IMPORTANT: Import order matters - these must be loaded first!
 
-// Crypto polyfill - must be first
+// Gesture handler - must be first for drawer navigation
+import 'react-native-gesture-handler';
+
+// Crypto polyfill
 import 'react-native-get-random-values';
 
 // Buffer polyfill

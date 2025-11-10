@@ -5,14 +5,22 @@ import React, { useEffect, useState } from 'react';
 import { View, Text, StyleSheet, ImageBackground, ScrollView, Modal } from 'react-native';
 import { NavigationContainer } from '@react-navigation/native';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
+import { createDrawerNavigator } from '@react-navigation/drawer';
 import type { BottomTabScreenProps } from '@react-navigation/bottom-tabs';
 import { Home, Search, User } from 'lucide-react-native';
-import { Header, AdvancedBalanceCard, TransactionList } from './src/components';
+import { Header, AdvancedBalanceCard, TransactionList, DrawerMenu } from './src/components';
 import { WalletProvider, useWallet } from './src/context/WalletContext';
 import WalletSetupScreen from './src/screens/WalletSetupScreen';
 import SendPaymentScreen from './src/screens/SendPaymentScreen';
 import OnRampScreen from './src/screens/OnRampScreen';
 import OffRampScreen from './src/screens/OffRampScreen';
+import KYCScreen from './src/screens/KYCScreen';
+import SettingsScreen from './src/screens/SettingsScreen';
+import ProfileScreen from './src/screens/ProfileScreen';
+import AboutScreen from './src/screens/AboutScreen';
+import WalletManagementScreen from './src/screens/WalletManagementScreen';
+import SupportScreen from './src/screens/SupportScreen';
+import LegalScreen from './src/screens/LegalScreen';
 
 type TabParamList = {
   Home: undefined;
@@ -20,11 +28,23 @@ type TabParamList = {
   Profile: undefined;
 };
 
+type DrawerParamList = {
+  MainTabs: undefined;
+  Profile: undefined;
+  Settings: undefined;
+  KYC: undefined;
+  WalletManagement: undefined;
+  Support: undefined;
+  Legal: undefined;
+  About: undefined;
+};
+
 type HomeProps = BottomTabScreenProps<TabParamList, 'Home'>;
 type SearchProps = BottomTabScreenProps<TabParamList, 'Search'>;
 type ProfileProps = BottomTabScreenProps<TabParamList, 'Profile'>;
 
 const Tab = createBottomTabNavigator<TabParamList>();
+const Drawer = createDrawerNavigator<DrawerParamList>();
 
 function HomeScreen({ navigation }: HomeProps) {
   const wallet = useWallet();
@@ -37,7 +57,7 @@ function HomeScreen({ navigation }: HomeProps) {
   };
 
   const handleMenuPress = () => {
-    console.log('Menu pressed');
+    navigation.getParent()?.openDrawer();
   };
 
   const handleCashOut = () => {
@@ -149,20 +169,32 @@ function SearchScreen({ navigation }: SearchProps) {
   );
 }
 
-function ProfileScreen({ navigation }: ProfileProps) {
+// Tab Navigator - wraps the bottom tabs
+function TabNavigator() {
   return (
-    <View style={styles.container}>
-      <Text style={styles.title}>Profile Screen</Text>
-      <Text style={styles.subtitle}>Your Profile</Text>
-      <View style={styles.infoContainer}>
-        <Text style={styles.infoLabel}>Name:</Text>
-        <Text style={styles.infoValue}>John Doe</Text>
-      </View>
-      <View style={styles.infoContainer}>
-        <Text style={styles.infoLabel}>Email:</Text>
-        <Text style={styles.infoValue}>john@example.com</Text>
-      </View>
-    </View>
+    <Tab.Navigator
+      screenOptions={({ route }) => ({
+        headerShown: false,
+        tabBarStyle: styles.tabBar,
+        tabBarShowLabel: false,
+        tabBarIcon: ({ focused, color, size }) => {
+          if (route.name === 'Home') {
+            return <Home color={color} size={26} />;
+          } else if (route.name === 'Search') {
+            return <Search color={color} size={26} />;
+          } else if (route.name === 'Profile') {
+            return <User color={color} size={26} />;
+          }
+          return null;
+        },
+        tabBarActiveTintColor: '#FFFFFF',
+        tabBarInactiveTintColor: '#8E8E93',
+      })}
+    >
+      <Tab.Screen name="Home" component={HomeScreen} />
+      <Tab.Screen name="Search" component={SearchScreen} />
+      <Tab.Screen name="Profile" component={ProfileScreen} />
+    </Tab.Navigator>
   );
 }
 
@@ -193,32 +225,29 @@ export default function App() {
   if (isLoading) {
     return <SplashScreen />;
   }
+
   return (
     <WalletProvider>
       <NavigationContainer>
-        <Tab.Navigator
-          screenOptions={({ route }) => ({
+        <Drawer.Navigator
+          drawerContent={(props) => <DrawerMenu {...props} />}
+          screenOptions={{
             headerShown: false,
-            tabBarStyle: styles.tabBar,
-            tabBarShowLabel: false,
-            tabBarIcon: ({ focused, color, size }) => {
-              if (route.name === 'Home') {
-                return <Home color={color} size={26} />;
-              } else if (route.name === 'Search') {
-                return <Search color={color} size={26} />;
-              } else if (route.name === 'Profile') {
-                return <User color={color} size={26} />;
-              }
-              return null;
+            drawerType: 'slide',
+            drawerStyle: {
+              width: 300,
             },
-            tabBarActiveTintColor: '#FFFFFF',
-            tabBarInactiveTintColor: '#8E8E93',
-          })}
+          }}
         >
-          <Tab.Screen name="Home" component={HomeScreen} />
-          <Tab.Screen name="Search" component={SearchScreen} />
-          <Tab.Screen name="Profile" component={ProfileScreen} />
-        </Tab.Navigator>
+          <Drawer.Screen name="MainTabs" component={TabNavigator} />
+          <Drawer.Screen name="Profile" component={ProfileScreen} />
+          <Drawer.Screen name="Settings" component={SettingsScreen} />
+          <Drawer.Screen name="KYC" component={KYCScreen} />
+          <Drawer.Screen name="WalletManagement" component={WalletManagementScreen} />
+          <Drawer.Screen name="Support" component={SupportScreen} />
+          <Drawer.Screen name="Legal" component={LegalScreen} />
+          <Drawer.Screen name="About" component={AboutScreen} />
+        </Drawer.Navigator>
       </NavigationContainer>
     </WalletProvider>
   );
