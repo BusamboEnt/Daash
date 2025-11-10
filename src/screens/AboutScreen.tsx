@@ -16,9 +16,12 @@ import {
   Twitter,
   MessageCircle,
   ChevronRight,
+  ArrowLeft,
 } from 'lucide-react-native';
+import { useNavigation } from '@react-navigation/native';
 
 const AboutScreen: React.FC = () => {
+  const navigation = useNavigation();
   const appVersion = '1.0.0';
   const buildNumber = '100';
 
@@ -52,6 +55,12 @@ const AboutScreen: React.FC = () => {
     <SafeAreaView style={styles.container}>
       {/* Header */}
       <View style={styles.header}>
+        <TouchableOpacity
+          onPress={() => navigation.goBack()}
+          style={styles.backButton}
+        >
+          <ArrowLeft size={24} color="#333333" />
+        </TouchableOpacity>
         <Text style={styles.headerTitle}>About</Text>
       </View>
 
@@ -230,6 +239,11 @@ const styles = StyleSheet.create({
     fontSize: 20,
     fontWeight: 'bold',
     color: '#333333',
+  },
+  backButton: {
+    position: 'absolute',
+    left: 20,
+    padding: 4,
   },
   scrollView: {
     flex: 1,

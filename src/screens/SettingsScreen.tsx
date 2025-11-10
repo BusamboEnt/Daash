@@ -8,13 +8,15 @@ import {
   Switch,
   SafeAreaView,
 } from 'react-native';
-import { ChevronRight, Moon, DollarSign, Bell, Lock, X } from 'lucide-react-native';
+import { ChevronRight, Moon, DollarSign, Bell, Lock, ArrowLeft } from 'lucide-react-native';
+import { useNavigation } from '@react-navigation/native';
 
 interface SettingsScreenProps {
   onClose?: () => void;
 }
 
 const SettingsScreen: React.FC<SettingsScreenProps> = ({ onClose }) => {
+  const navigation = useNavigation();
   // Theme Settings
   const [theme, setTheme] = useState<'light' | 'dark' | 'auto'>('light');
 
@@ -41,12 +43,13 @@ const SettingsScreen: React.FC<SettingsScreenProps> = ({ onClose }) => {
     <SafeAreaView style={styles.container}>
       {/* Header */}
       <View style={styles.header}>
+        <TouchableOpacity
+          onPress={() => (onClose ? onClose() : navigation.goBack())}
+          style={styles.backButton}
+        >
+          <ArrowLeft size={24} color="#333333" />
+        </TouchableOpacity>
         <Text style={styles.headerTitle}>Settings</Text>
-        {onClose && (
-          <TouchableOpacity onPress={onClose} style={styles.closeButton}>
-            <X size={24} color="#333333" />
-          </TouchableOpacity>
-        )}
       </View>
 
       <ScrollView style={styles.scrollView} showsVerticalScrollIndicator={false}>
@@ -274,9 +277,9 @@ const styles = StyleSheet.create({
     fontWeight: 'bold',
     color: '#333333',
   },
-  closeButton: {
+  backButton: {
     position: 'absolute',
-    right: 20,
+    left: 20,
     padding: 4,
   },
   scrollView: {

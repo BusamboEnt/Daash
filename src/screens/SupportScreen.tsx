@@ -15,9 +15,12 @@ import {
   Book,
   Youtube,
   ExternalLink,
+  ArrowLeft,
 } from 'lucide-react-native';
+import { useNavigation } from '@react-navigation/native';
 
 const SupportScreen: React.FC = () => {
+  const navigation = useNavigation();
   const handleEmailSupport = () => {
     Linking.openURL('mailto:support@daash.app?subject=Daash Support Request');
   };
@@ -41,6 +44,12 @@ const SupportScreen: React.FC = () => {
   return (
     <SafeAreaView style={styles.container}>
       <View style={styles.header}>
+        <TouchableOpacity
+          onPress={() => navigation.goBack()}
+          style={styles.backButton}
+        >
+          <ArrowLeft size={24} color="#333333" />
+        </TouchableOpacity>
         <Text style={styles.headerTitle}>Support</Text>
       </View>
 
@@ -190,6 +199,11 @@ const styles = StyleSheet.create({
     fontSize: 20,
     fontWeight: 'bold',
     color: '#333333',
+  },
+  backButton: {
+    position: 'absolute',
+    left: 20,
+    padding: 4,
   },
   scrollView: {
     flex: 1,

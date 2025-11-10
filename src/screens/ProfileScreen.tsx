@@ -9,10 +9,12 @@ import {
   SafeAreaView,
   Alert,
 } from 'react-native';
-import { User, Mail, Phone, MapPin, Edit2, Save, Copy, CheckCircle } from 'lucide-react-native';
+import { User, Mail, Phone, MapPin, Edit2, Save, Copy, CheckCircle, ArrowLeft } from 'lucide-react-native';
 import { useWallet } from '../context/WalletContext';
+import { useNavigation } from '@react-navigation/native';
 
 const ProfileScreen: React.FC = () => {
+  const navigation = useNavigation();
   const wallet = useWallet();
   const [isEditing, setIsEditing] = useState(false);
   const [copied, setCopied] = useState(false);
@@ -49,6 +51,12 @@ const ProfileScreen: React.FC = () => {
     <SafeAreaView style={styles.container}>
       {/* Header */}
       <View style={styles.header}>
+        <TouchableOpacity
+          onPress={() => navigation.goBack()}
+          style={styles.backButton}
+        >
+          <ArrowLeft size={24} color="#333333" />
+        </TouchableOpacity>
         <Text style={styles.headerTitle}>Profile</Text>
         <TouchableOpacity
           onPress={() => (isEditing ? handleSave() : setIsEditing(true))}
@@ -246,6 +254,11 @@ const styles = StyleSheet.create({
     fontSize: 20,
     fontWeight: 'bold',
     color: '#333333',
+  },
+  backButton: {
+    position: 'absolute',
+    left: 20,
+    padding: 4,
   },
   editButton: {
     position: 'absolute',
