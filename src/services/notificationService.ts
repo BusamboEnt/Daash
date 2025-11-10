@@ -10,73 +10,19 @@ import {
 const NOTIFICATIONS_STORAGE_KEY = '@daash_notifications';
 const NOTIFICATION_SETTINGS_KEY = '@daash_notification_settings';
 
-// Dynamically import expo-notifications with fallback
-let Notifications: any = null;
-let isNotificationsAvailable = false;
-
-try {
-  Notifications = require('expo-notifications');
-  isNotificationsAvailable = true;
-
-  // Configure how notifications are presented when app is in foreground
-  if (Notifications && Notifications.setNotificationHandler) {
-    Notifications.setNotificationHandler({
-      handleNotification: async () => ({
-        shouldShowAlert: true,
-        shouldPlaySound: true,
-        shouldSetBadge: true,
-      }),
-    });
-  }
-} catch (error) {
-  console.warn('expo-notifications is not available. Running in limited mode.');
-  console.warn('To enable full notification support, create a development build.');
-  isNotificationsAvailable = false;
-}
-
 class NotificationService {
   /**
    * Request notification permissions from the user
+   * Note: Native notifications removed for Expo Go compatibility
    */
   async requestPermissions(): Promise<boolean> {
-    if (!isNotificationsAvailable || !Notifications) {
-      console.log('Notifications not available in this environment');
-      return false;
-    }
-
-    try {
-      const { status: existingStatus } = await Notifications.getPermissionsAsync();
-      let finalStatus = existingStatus;
-
-      if (existingStatus !== 'granted') {
-        const { status } = await Notifications.requestPermissionsAsync();
-        finalStatus = status;
-      }
-
-      if (finalStatus !== 'granted') {
-        console.log('Notification permissions not granted');
-        return false;
-      }
-
-      // Configure notification channel for Android
-      if (Platform.OS === 'android') {
-        await Notifications.setNotificationChannelAsync('default', {
-          name: 'default',
-          importance: Notifications.AndroidImportance.MAX,
-          vibrationPattern: [0, 250, 250, 250],
-          lightColor: '#8A784E',
-        });
-      }
-
-      return true;
-    } catch (error) {
-      console.error('Error requesting notification permissions:', error);
-      return false;
-    }
+    console.log('Native notifications not available - using in-app notifications only');
+    return false;
   }
 
   /**
    * Schedule a local notification
+   * Note: Native notifications removed for Expo Go compatibility
    */
   async scheduleNotification(
     title: string,
@@ -84,38 +30,9 @@ class NotificationService {
     data?: Record<string, any>,
     delaySeconds: number = 0
   ): Promise<string | null> {
-    if (!isNotificationsAvailable || !Notifications) {
-      // Show alert in development to inform user
-      Alert.alert(
-        'Notifications Not Available',
-        'Local notifications require a development build. Notification stored in history only.',
-        [{ text: 'OK' }]
-      );
-      return null;
-    }
-
-    try {
-      const hasPermission = await this.requestPermissions();
-      if (!hasPermission) {
-        console.log('No notification permission');
-        return null;
-      }
-
-      const notificationId = await Notifications.scheduleNotificationAsync({
-        content: {
-          title,
-          body,
-          data: data || {},
-          sound: true,
-        },
-        trigger: delaySeconds > 0 ? { seconds: delaySeconds } : null,
-      });
-
-      return notificationId;
-    } catch (error) {
-      console.error('Error scheduling notification:', error);
-      return null;
-    }
+    // In-app notifications only - no native notifications
+    console.log('Notification scheduled (in-app only):', title, body);
+    return null;
   }
 
   /**
