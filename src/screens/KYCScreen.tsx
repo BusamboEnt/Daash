@@ -9,7 +9,8 @@ import {
   ActivityIndicator,
   Modal,
 } from 'react-native';
-import { Shield, CheckCircle, XCircle, Clock, AlertCircle } from 'lucide-react-native';
+import { Shield, CheckCircle, XCircle, Clock, AlertCircle, ArrowLeft } from 'lucide-react-native';
+import { useNavigation } from '@react-navigation/native';
 import { useWallet } from '../context/WalletContext';
 import { RampService } from '../services/rampService';
 import { SupabaseService } from '../services/supabaseService';
@@ -22,6 +23,7 @@ interface KYCScreenProps {
 }
 
 export default function KYCScreen({ onComplete, onCancel }: KYCScreenProps) {
+  const navigation = useNavigation();
   const wallet = useWallet();
   const [kycInfo, setKycInfo] = useState<KYCInfo | null>(null);
   const [isLoading, setIsLoading] = useState(true);
@@ -139,6 +141,12 @@ export default function KYCScreen({ onComplete, onCancel }: KYCScreenProps) {
   return (
     <ScrollView style={styles.container}>
       <View style={styles.header}>
+        <TouchableOpacity
+          onPress={() => (onCancel ? onCancel() : navigation.goBack())}
+          style={styles.backButton}
+        >
+          <ArrowLeft size={24} color="#FFFFFF" />
+        </TouchableOpacity>
         <Shield size={32} color="#FFFFFF" />
         <Text style={styles.headerTitle}>Identity Verification</Text>
       </View>
@@ -279,6 +287,9 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     gap: 12,
+  },
+  backButton: {
+    padding: 4,
   },
   headerTitle: {
     fontSize: 24,

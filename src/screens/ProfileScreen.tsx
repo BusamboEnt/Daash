@@ -52,7 +52,7 @@ const ProfileScreen: React.FC = () => {
       {/* Header */}
       <View style={styles.header}>
         <TouchableOpacity
-          onPress={() => navigation.navigate('MainTabs' as never)}
+          onPress={() => navigation.getParent()?.openDrawer()}
           style={styles.backButton}
         >
           <ArrowLeft size={24} color="#333333" />
