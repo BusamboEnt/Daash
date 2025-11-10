@@ -58,6 +58,7 @@ const AboutScreen: React.FC = () => {
       <View style={styles.header}>
         <TouchableOpacity
           onPress={() => {
+            navigation.navigate('MainTabs' as never);
             navigation.dispatch(DrawerActions.openDrawer());
           }}
           style={styles.backButton}

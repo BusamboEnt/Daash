@@ -49,6 +49,7 @@ const SettingsScreen: React.FC<SettingsScreenProps> = ({ onClose }) => {
             if (onClose) {
               onClose();
             } else {
+              navigation.navigate('MainTabs' as never);
               navigation.dispatch(DrawerActions.openDrawer());
             }
           }}
