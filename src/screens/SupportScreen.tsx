@@ -45,7 +45,12 @@ const SupportScreen: React.FC = () => {
     <SafeAreaView style={styles.container}>
       <View style={styles.header}>
         <TouchableOpacity
-          onPress={() => navigation.getParent()?.openDrawer()}
+          onPress={() => {
+            navigation.navigate('MainTabs' as never);
+            setTimeout(() => {
+              (navigation as any).getParent()?.openDrawer?.();
+            }, 100);
+          }}
           style={styles.backButton}
         >
           <ArrowLeft size={24} color="#333333" />
