@@ -1,5 +1,4 @@
-import * as Notifications from 'expo-notifications';
-import { Platform } from 'react-native';
+import { Platform, Alert } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import {
   AppNotification,
@@ -11,20 +10,40 @@ import {
 const NOTIFICATIONS_STORAGE_KEY = '@daash_notifications';
 const NOTIFICATION_SETTINGS_KEY = '@daash_notification_settings';
 
-// Configure how notifications are presented when app is in foreground
-Notifications.setNotificationHandler({
-  handleNotification: async () => ({
-    shouldShowAlert: true,
-    shouldPlaySound: true,
-    shouldSetBadge: true,
-  }),
-});
+// Dynamically import expo-notifications with fallback
+let Notifications: any = null;
+let isNotificationsAvailable = false;
+
+try {
+  Notifications = require('expo-notifications');
+  isNotificationsAvailable = true;
+
+  // Configure how notifications are presented when app is in foreground
+  if (Notifications && Notifications.setNotificationHandler) {
+    Notifications.setNotificationHandler({
+      handleNotification: async () => ({
+        shouldShowAlert: true,
+        shouldPlaySound: true,
+        shouldSetBadge: true,
+      }),
+    });
+  }
+} catch (error) {
+  console.warn('expo-notifications is not available. Running in limited mode.');
+  console.warn('To enable full notification support, create a development build.');
+  isNotificationsAvailable = false;
+}
 
 class NotificationService {
   /**
    * Request notification permissions from the user
    */
   async requestPermissions(): Promise<boolean> {
+    if (!isNotificationsAvailable || !Notifications) {
+      console.log('Notifications not available in this environment');
+      return false;
+    }
+
     try {
       const { status: existingStatus } = await Notifications.getPermissionsAsync();
       let finalStatus = existingStatus;
@@ -65,6 +84,16 @@ class NotificationService {
     data?: Record<string, any>,
     delaySeconds: number = 0
   ): Promise<string | null> {
+    if (!isNotificationsAvailable || !Notifications) {
+      // Show alert in development to inform user
+      Alert.alert(
+        'Notifications Not Available',
+        'Local notifications require a development build. Notification stored in history only.',
+        [{ text: 'OK' }]
+      );
+      return null;
+    }
+
     try {
       const hasPermission = await this.requestPermissions();
       if (!hasPermission) {

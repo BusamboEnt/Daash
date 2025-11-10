@@ -1,7 +1,14 @@
 import React, { createContext, useContext, useState, useEffect, useRef } from 'react';
-import * as Notifications from 'expo-notifications';
 import { AppNotification, NotificationSettings } from '../types/notification';
 import NotificationService from '../services/notificationService';
+
+// Dynamically import expo-notifications with fallback
+let Notifications: any = null;
+try {
+  Notifications = require('expo-notifications');
+} catch (error) {
+  console.warn('expo-notifications is not available in NotificationContext');
+}
 
 interface NotificationContextType {
   notifications: AppNotification[];
@@ -45,39 +52,53 @@ export const NotificationProvider: React.FC<NotificationProviderProps> = ({ chil
   });
   const [isLoading, setIsLoading] = useState(true);
 
-  const notificationListener = useRef<Notifications.Subscription>();
-  const responseListener = useRef<Notifications.Subscription>();
+  const notificationListener = useRef<any>();
+  const responseListener = useRef<any>();
 
   useEffect(() => {
     // Initialize notifications
     initializeNotifications();
 
-    // Set up listeners for when notifications are received
-    notificationListener.current = Notifications.addNotificationReceivedListener(
-      (notification) => {
-        console.log('Notification received:', notification);
-        // Refresh notifications when a new one is received
-        refreshNotifications();
-      }
-    );
+    // Set up listeners for when notifications are received (only if available)
+    if (Notifications && Notifications.addNotificationReceivedListener) {
+      try {
+        notificationListener.current = Notifications.addNotificationReceivedListener(
+          (notification: any) => {
+            console.log('Notification received:', notification);
+            // Refresh notifications when a new one is received
+            refreshNotifications();
+          }
+        );
 
-    // Set up listener for when user taps on notification
-    responseListener.current = Notifications.addNotificationResponseReceivedListener(
-      (response) => {
-        console.log('Notification response:', response);
-        // Handle notification tap - navigate to relevant screen based on data
-        const data = response.notification.request.content.data;
-        // TODO: Add navigation logic based on notification data
+        // Set up listener for when user taps on notification
+        responseListener.current = Notifications.addNotificationResponseReceivedListener(
+          (response: any) => {
+            console.log('Notification response:', response);
+            // Handle notification tap - navigate to relevant screen based on data
+            const data = response.notification.request.content.data;
+            // TODO: Add navigation logic based on notification data
+          }
+        );
+      } catch (error) {
+        console.warn('Could not set up notification listeners:', error);
       }
-    );
+    }
 
     return () => {
       // Clean up listeners
-      if (notificationListener.current) {
-        Notifications.removeNotificationSubscription(notificationListener.current);
+      if (Notifications && notificationListener.current) {
+        try {
+          Notifications.removeNotificationSubscription(notificationListener.current);
+        } catch (error) {
+          console.warn('Error removing notification listener:', error);
+        }
       }
-      if (responseListener.current) {
-        Notifications.removeNotificationSubscription(responseListener.current);
+      if (Notifications && responseListener.current) {
+        try {
+          Notifications.removeNotificationSubscription(responseListener.current);
+        } catch (error) {
+          console.warn('Error removing response listener:', error);
+        }
       }
     };
   }, []);
