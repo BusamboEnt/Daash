@@ -4,6 +4,7 @@ export { default as MenuButton } from './MenuButton';
 export { default as BalanceCard } from './BalanceCard';
 export { default as AdvancedBalanceCard } from './AdvancedBalanceCard';
 export { default as TransactionList } from './TransactionList';
+export { default as TransactionDetailModal } from './TransactionDetailModal';
 export { UploadProgress } from './UploadProgress';
 export { DocumentPreview } from './DocumentPreview';
 export { default as DrawerMenu } from './DrawerMenu';

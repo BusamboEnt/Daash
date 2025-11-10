@@ -11,6 +11,7 @@ import {
 import { Transaction } from '../types/wallet';
 import { StellarService } from '../services/stellarService';
 import { ArrowUp, ArrowDown, Clock } from 'lucide-react-native';
+import TransactionDetailModal from './TransactionDetailModal';
 
 interface TransactionListProps {
   publicKey: string;
@@ -20,6 +21,8 @@ const TransactionList: React.FC<TransactionListProps> = ({ publicKey }) => {
   const [transactions, setTransactions] = useState<Transaction[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const [refreshing, setRefreshing] = useState(false);
+  const [selectedTransaction, setSelectedTransaction] = useState<Transaction | null>(null);
+  const [showDetailModal, setShowDetailModal] = useState(false);
 
   useEffect(() => {
     loadTransactions();
@@ -58,11 +61,24 @@ const TransactionList: React.FC<TransactionListProps> = ({ publicKey }) => {
     return date.toLocaleDateString();
   };
 
+  const handleTransactionPress = (transaction: Transaction) => {
+    setSelectedTransaction(transaction);
+    setShowDetailModal(true);
+  };
+
+  const handleCloseModal = () => {
+    setShowDetailModal(false);
+    setSelectedTransaction(null);
+  };
+
   const renderTransaction = ({ item }: { item: Transaction }) => {
     const isSent = item.source_account === publicKey;
 
     return (
-      <TouchableOpacity style={styles.transactionItem}>
+      <TouchableOpacity
+        style={styles.transactionItem}
+        onPress={() => handleTransactionPress(item)}
+      >
         <View
           style={[styles.iconContainer, isSent ? styles.sentIcon : styles.receivedIcon]}
         >
@@ -123,6 +139,13 @@ const TransactionList: React.FC<TransactionListProps> = ({ publicKey }) => {
           />
         }
         showsVerticalScrollIndicator={false}
+      />
+
+      <TransactionDetailModal
+        visible={showDetailModal}
+        transaction={selectedTransaction}
+        userPublicKey={publicKey}
+        onClose={handleCloseModal}
       />
     </View>
   );
