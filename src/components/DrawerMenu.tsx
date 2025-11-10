@@ -4,6 +4,7 @@ import { DrawerContentScrollView, DrawerContentComponentProps } from '@react-nav
 import {
   User,
   Settings,
+  Bell,
   Shield,
   Wallet,
   HelpCircle,
@@ -12,6 +13,7 @@ import {
   LogOut,
 } from 'lucide-react-native';
 import { useWallet } from '../context/WalletContext';
+import { useNotifications } from '../context/NotificationContext';
 
 interface MenuItem {
   id: string;
@@ -23,6 +25,7 @@ interface MenuItem {
 
 const DrawerMenu: React.FC<DrawerContentComponentProps> = (props) => {
   const wallet = useWallet();
+  const { unreadCount } = useNotifications();
 
   const menuItems: MenuItem[] = [
     {
@@ -36,6 +39,13 @@ const DrawerMenu: React.FC<DrawerContentComponentProps> = (props) => {
       label: 'Settings',
       icon: Settings,
       onPress: () => props.navigation.navigate('Settings'),
+    },
+    {
+      id: 'notifications',
+      label: 'Notifications',
+      icon: Bell,
+      onPress: () => props.navigation.navigate('NotificationCenter'),
+      badge: unreadCount > 0 ? unreadCount.toString() : undefined,
     },
     {
       id: 'kyc',

@@ -2,7 +2,7 @@
 import './polyfills';
 
 import React, { useEffect, useState } from 'react';
-import { View, Text, StyleSheet, ImageBackground, ScrollView, Modal } from 'react-native';
+import { View, Text, StyleSheet, ImageBackground, ScrollView, Modal, TouchableOpacity } from 'react-native';
 import { NavigationContainer } from '@react-navigation/native';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import { createDrawerNavigator } from '@react-navigation/drawer';
@@ -10,6 +10,8 @@ import type { BottomTabScreenProps } from '@react-navigation/bottom-tabs';
 import { Home, Search, User } from 'lucide-react-native';
 import { Header, AdvancedBalanceCard, TransactionList, DrawerMenu } from './src/components';
 import { WalletProvider, useWallet } from './src/context/WalletContext';
+import { NotificationProvider } from './src/context/NotificationContext';
+import NotificationService from './src/services/notificationService';
 import WalletSetupScreen from './src/screens/WalletSetupScreen';
 import SendPaymentScreen from './src/screens/SendPaymentScreen';
 import OnRampScreen from './src/screens/OnRampScreen';
@@ -21,6 +23,7 @@ import AboutScreen from './src/screens/AboutScreen';
 import WalletManagementScreen from './src/screens/WalletManagementScreen';
 import SupportScreen from './src/screens/SupportScreen';
 import LegalScreen from './src/screens/LegalScreen';
+import NotificationCenterScreen from './src/screens/NotificationCenterScreen';
 
 type TabParamList = {
   Home: undefined;
@@ -37,6 +40,7 @@ type DrawerParamList = {
   Support: undefined;
   Legal: undefined;
   About: undefined;
+  NotificationCenter: undefined;
 };
 
 type HomeProps = BottomTabScreenProps<TabParamList, 'Home'>;
@@ -60,6 +64,10 @@ function HomeScreen({ navigation }: HomeProps) {
     navigation.getParent()?.openDrawer();
   };
 
+  const handleNotificationPress = () => {
+    navigation.getParent()?.navigate('NotificationCenter' as never);
+  };
+
   const handleCashOut = () => {
     // Show options: Send or Sell
     setShowOffRamp(true);
@@ -69,6 +77,11 @@ function HomeScreen({ navigation }: HomeProps) {
     console.log('Deposit pressed');
     // Show On-Ramp screen for buying crypto
     setShowOnRamp(true);
+  };
+
+  const handleTestNotification = async () => {
+    // Send a test notification
+    await NotificationService.notifyTransaction('received', '10.5', 'XLM');
   };
 
   // Parse balance as number
@@ -87,7 +100,11 @@ function HomeScreen({ navigation }: HomeProps) {
 
   return (
     <View style={styles.screenContainer}>
-      <Header onSearch={handleSearch} onMenuPress={handleMenuPress} />
+      <Header
+        onSearch={handleSearch}
+        onMenuPress={handleMenuPress}
+        onNotificationPress={handleNotificationPress}
+      />
       <ScrollView style={styles.scrollView} showsVerticalScrollIndicator={false}>
         <AdvancedBalanceCard
           balance={balanceNumber}
@@ -106,9 +123,14 @@ function HomeScreen({ navigation }: HomeProps) {
               : 'Create a wallet to get started'}
           </Text>
           {wallet.wallet && (
-            <Text style={styles.publicKeyText} numberOfLines={1} ellipsizeMode="middle">
-              {wallet.wallet.publicKey}
-            </Text>
+            <>
+              <Text style={styles.publicKeyText} numberOfLines={1} ellipsizeMode="middle">
+                {wallet.wallet.publicKey}
+              </Text>
+              <TouchableOpacity style={styles.testButton} onPress={handleTestNotification}>
+                <Text style={styles.testButtonText}>Test Notification</Text>
+              </TouchableOpacity>
+            </>
           )}
         </View>
       </ScrollView>
@@ -228,27 +250,30 @@ export default function App() {
 
   return (
     <WalletProvider>
-      <NavigationContainer>
-        <Drawer.Navigator
-          drawerContent={(props) => <DrawerMenu {...props} />}
-          screenOptions={{
-            headerShown: false,
-            drawerType: 'slide',
-            drawerStyle: {
-              width: 300,
-            },
-          }}
-        >
-          <Drawer.Screen name="MainTabs" component={TabNavigator} />
-          <Drawer.Screen name="Profile" component={ProfileScreen} />
-          <Drawer.Screen name="Settings" component={SettingsScreen} />
-          <Drawer.Screen name="KYC" component={KYCScreen} />
-          <Drawer.Screen name="WalletManagement" component={WalletManagementScreen} />
-          <Drawer.Screen name="Support" component={SupportScreen} />
-          <Drawer.Screen name="Legal" component={LegalScreen} />
-          <Drawer.Screen name="About" component={AboutScreen} />
-        </Drawer.Navigator>
-      </NavigationContainer>
+      <NotificationProvider>
+        <NavigationContainer>
+          <Drawer.Navigator
+            drawerContent={(props) => <DrawerMenu {...props} />}
+            screenOptions={{
+              headerShown: false,
+              drawerType: 'slide',
+              drawerStyle: {
+                width: 300,
+              },
+            }}
+          >
+            <Drawer.Screen name="MainTabs" component={TabNavigator} />
+            <Drawer.Screen name="Profile" component={ProfileScreen} />
+            <Drawer.Screen name="Settings" component={SettingsScreen} />
+            <Drawer.Screen name="KYC" component={KYCScreen} />
+            <Drawer.Screen name="WalletManagement" component={WalletManagementScreen} />
+            <Drawer.Screen name="Support" component={SupportScreen} />
+            <Drawer.Screen name="Legal" component={LegalScreen} />
+            <Drawer.Screen name="About" component={AboutScreen} />
+            <Drawer.Screen name="NotificationCenter" component={NotificationCenterScreen} />
+          </Drawer.Navigator>
+        </NavigationContainer>
+      </NotificationProvider>
     </WalletProvider>
   );
 }
@@ -297,6 +322,18 @@ const styles = StyleSheet.create({
     marginTop: 8,
     fontFamily: 'monospace',
     opacity: 0.8,
+  },
+  testButton: {
+    backgroundColor: '#FFFFFF',
+    paddingHorizontal: 24,
+    paddingVertical: 12,
+    borderRadius: 8,
+    marginTop: 16,
+  },
+  testButtonText: {
+    color: '#8A784E',
+    fontSize: 14,
+    fontWeight: '600',
   },
   infoContainer: {
     flexDirection: 'row',
