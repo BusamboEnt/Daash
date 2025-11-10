@@ -44,7 +44,7 @@ const SettingsScreen: React.FC<SettingsScreenProps> = ({ onClose }) => {
       {/* Header */}
       <View style={styles.header}>
         <TouchableOpacity
-          onPress={() => (onClose ? onClose() : navigation.goBack())}
+          onPress={() => (onClose ? onClose() : navigation.navigate('MainTabs' as never))}
           style={styles.backButton}
         >
           <ArrowLeft size={24} color="#333333" />

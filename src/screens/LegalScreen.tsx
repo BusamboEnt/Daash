@@ -21,7 +21,7 @@ const LegalScreen: React.FC = () => {
     <SafeAreaView style={styles.container}>
       <View style={styles.header}>
         <TouchableOpacity
-          onPress={() => navigation.goBack()}
+          onPress={() => navigation.navigate('MainTabs' as never)}
           style={styles.backButton}
         >
           <ArrowLeft size={24} color="#333333" />
