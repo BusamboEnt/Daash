@@ -23,6 +23,7 @@ import SettingsScreen from './src/screens/SettingsScreen';
 import ProfileScreen from './src/screens/ProfileScreen';
 import AboutScreen from './src/screens/AboutScreen';
 import WalletManagementScreen from './src/screens/WalletManagementScreen';
+import WalletLimitsScreen from './src/screens/WalletLimitsScreen';
 import SupportScreen from './src/screens/SupportScreen';
 import LegalScreen from './src/screens/LegalScreen';
 import NotificationCenterScreen from './src/screens/NotificationCenterScreen';
@@ -39,6 +40,7 @@ type DrawerParamList = {
   Settings: undefined;
   KYC: undefined;
   WalletManagement: undefined;
+  WalletLimits: undefined;
   Support: undefined;
   Legal: undefined;
   About: undefined;
@@ -294,6 +296,7 @@ export default function App() {
             <Drawer.Screen name="Settings" component={SettingsScreen} />
             <Drawer.Screen name="KYC" component={KYCScreen} />
             <Drawer.Screen name="WalletManagement" component={WalletManagementScreen} />
+            <Drawer.Screen name="WalletLimits" component={WalletLimitsScreen} />
             <Drawer.Screen name="Support" component={SupportScreen} />
             <Drawer.Screen name="Legal" component={LegalScreen} />
             <Drawer.Screen name="About" component={AboutScreen} />

@@ -7,6 +7,7 @@ import {
   Bell,
   Shield,
   Wallet,
+  CreditCard,
   HelpCircle,
   FileText,
   Info,
@@ -58,6 +59,12 @@ const DrawerMenu: React.FC<DrawerContentComponentProps> = (props) => {
       label: 'Wallet Management',
       icon: Wallet,
       onPress: () => props.navigation.navigate('WalletManagement'),
+    },
+    {
+      id: 'limits',
+      label: 'Wallet Limits',
+      icon: CreditCard,
+      onPress: () => props.navigation.navigate('WalletLimits'),
     },
     {
       id: 'support',
