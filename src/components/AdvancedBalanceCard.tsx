@@ -1,6 +1,8 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { View, Text, TouchableOpacity, StyleSheet, ActivityIndicator } from 'react-native';
-import { Eye, EyeOff, TrendingUp, TrendingDown, ArrowUp, ArrowDown } from 'lucide-react-native';
+import { Eye, EyeOff, TrendingUp, TrendingDown, ArrowUp, ArrowDown, Plus } from 'lucide-react-native';
+import { StellarService } from '../services/stellarService';
+import { WalletBalance } from '../types/wallet';
 
 interface AdvancedBalanceCardProps {
   balance?: number;
@@ -8,8 +10,16 @@ interface AdvancedBalanceCardProps {
   percentageChange?: number;
   onCashOut?: () => void;
   onDeposit?: () => void;
+  onAddAsset?: () => void;
   isLoading?: boolean;
   showEyeIcon?: boolean;
+  publicKey?: string;
+}
+
+interface AssetDisplay {
+  code: string;
+  balance: string;
+  icon: string;
 }
 
 const AdvancedBalanceCard: React.FC<AdvancedBalanceCardProps> = ({
@@ -18,10 +28,53 @@ const AdvancedBalanceCard: React.FC<AdvancedBalanceCardProps> = ({
   percentageChange = 12.76,
   onCashOut,
   onDeposit,
+  onAddAsset,
   isLoading = false,
   showEyeIcon = true,
+  publicKey,
 }) => {
   const [isBalanceVisible, setIsBalanceVisible] = useState(true);
+  const [assets, setAssets] = useState<AssetDisplay[]>([]);
+  const [loadingAssets, setLoadingAssets] = useState(false);
+
+  useEffect(() => {
+    if (publicKey) {
+      loadAssets();
+    }
+  }, [publicKey, balance]); // Reload when balance changes (e.g., after adding assets)
+
+  const loadAssets = async () => {
+    if (!publicKey) return;
+
+    try {
+      setLoadingAssets(true);
+      const balances = await StellarService.getAllBalances(publicKey);
+
+      const displayAssets: AssetDisplay[] = balances.map((bal) => {
+        if (bal.asset_type === 'native') {
+          return {
+            code: 'XLM',
+            balance: parseFloat(bal.balance).toFixed(2),
+            icon: '⭐',
+          };
+        } else {
+          let icon = '💵';
+          if (bal.asset_code === 'USDC') icon = '💵';
+          return {
+            code: bal.asset_code || 'Unknown',
+            balance: parseFloat(bal.balance).toFixed(2),
+            icon,
+          };
+        }
+      });
+
+      setAssets(displayAssets);
+    } catch (error) {
+      console.error('Error loading assets:', error);
+    } finally {
+      setLoadingAssets(false);
+    }
+  };
 
   // Format balance with currency and thousands separator
   const formatBalance = (amount: number) => {
@@ -111,6 +164,45 @@ const AdvancedBalanceCard: React.FC<AdvancedBalanceCardProps> = ({
             <Text style={styles.buttonText}>Deposit</Text>
           </TouchableOpacity>
         </View>
+
+        {/* Assets Section */}
+        {publicKey && (
+          <>
+            <View style={styles.assetsDivider} />
+            <View style={styles.assetsSection}>
+              <Text style={styles.assetsTitle}>YOUR ASSETS</Text>
+
+              {loadingAssets ? (
+                <ActivityIndicator size="small" color="#FFFFFF" style={styles.assetsLoader} />
+              ) : (
+                <>
+                  {assets.map((asset, index) => (
+                    <View key={`${asset.code}-${index}`} style={styles.assetItem}>
+                      <View style={styles.assetIcon}>
+                        <Text style={styles.assetIconText}>{asset.icon}</Text>
+                      </View>
+                      <View style={styles.assetInfo}>
+                        <Text style={styles.assetCode}>{asset.code}</Text>
+                      </View>
+                      <Text style={styles.assetBalance}>{asset.balance}</Text>
+                    </View>
+                  ))}
+
+                  {onAddAsset && (
+                    <TouchableOpacity
+                      style={styles.addAssetButton}
+                      onPress={onAddAsset}
+                      activeOpacity={0.8}
+                    >
+                      <Plus size={16} color="#6B9F6E" />
+                      <Text style={styles.addAssetText}>Add Asset (e.g., USDC)</Text>
+                    </TouchableOpacity>
+                  )}
+                </>
+              )}
+            </View>
+          </>
+        )}
       </View>
     </View>
   );
@@ -194,6 +286,77 @@ const styles = StyleSheet.create({
     color: '#FFFFFF',
     fontSize: 16,
     fontWeight: '600',
+  },
+  assetsDivider: {
+    height: 1,
+    backgroundColor: '#2C2C2E',
+    marginVertical: 20,
+  },
+  assetsSection: {
+    marginTop: 4,
+  },
+  assetsTitle: {
+    fontSize: 12,
+    fontWeight: '600',
+    color: '#8E8E93',
+    marginBottom: 12,
+    letterSpacing: 0.5,
+  },
+  assetsLoader: {
+    marginVertical: 20,
+  },
+  assetItem: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingVertical: 10,
+    paddingHorizontal: 12,
+    backgroundColor: '#2C2C2E',
+    borderRadius: 12,
+    marginBottom: 8,
+  },
+  assetIcon: {
+    width: 36,
+    height: 36,
+    borderRadius: 18,
+    backgroundColor: '#3A3A3C',
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginRight: 12,
+  },
+  assetIconText: {
+    fontSize: 20,
+  },
+  assetInfo: {
+    flex: 1,
+  },
+  assetCode: {
+    fontSize: 16,
+    fontWeight: '600',
+    color: '#FFFFFF',
+  },
+  assetBalance: {
+    fontSize: 16,
+    fontWeight: '600',
+    color: '#FFFFFF',
+  },
+  addAssetButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingVertical: 12,
+    paddingHorizontal: 16,
+    backgroundColor: '#2C2C2E',
+    borderRadius: 12,
+    marginTop: 4,
+    borderWidth: 1,
+    borderColor: '#3A3A3C',
+    borderStyle: 'dashed',
+  },
+  addAssetText: {
+    fontSize: 14,
+    fontWeight: '600',
+    color: '#6B9F6E',
+    marginLeft: 6,
   },
 });
 

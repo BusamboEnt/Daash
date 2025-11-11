@@ -9,7 +9,6 @@ import { createDrawerNavigator } from '@react-navigation/drawer';
 import type { BottomTabScreenProps } from '@react-navigation/bottom-tabs';
 import { Home, Search, User } from 'lucide-react-native';
 import { Header, AdvancedBalanceCard, TransactionList, DrawerMenu } from './src/components';
-import AssetList from './src/components/AssetList';
 import AddAssetModal from './src/components/AddAssetModal';
 import { WalletProvider, useWallet } from './src/context/WalletContext';
 import { NotificationProvider, useNotifications } from './src/context/NotificationContext';
@@ -121,16 +120,11 @@ function HomeScreen({ navigation }: HomeProps) {
           percentageChange={12.76}
           onCashOut={handleCashOut}
           onDeposit={handleDeposit}
+          onAddAsset={() => setShowAddAsset(true)}
           showEyeIcon={true}
           isLoading={wallet.isLoading}
+          publicKey={wallet.wallet?.publicKey}
         />
-        {wallet.wallet && (
-          <AssetList
-            publicKey={wallet.wallet.publicKey}
-            onAddAsset={() => setShowAddAsset(true)}
-            onRefresh={() => wallet.refreshBalance()}
-          />
-        )}
 
         <View style={styles.content}>
           <Text style={styles.title}>Welcome to Daash!</Text>
