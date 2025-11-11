@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "107506144115",
+    "project_id": "daash-app",
+    "storage_bucket": "daash-app.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:107506144115:android:e3cb6d929b81a5f905eb06",
+        "android_client_info": {
+          "package_name": "com.daash.app"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyBCihOWTT_0SbTMqv6yfPQZo5NGxErnX_M"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
