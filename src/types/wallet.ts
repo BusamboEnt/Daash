@@ -26,9 +26,53 @@ export interface Transaction {
   type: string;
   amount?: string;
   asset_type?: string;
+  asset_code?: string;
+  asset_issuer?: string;
   from?: string;
   to?: string;
 }
+
+// Asset Types for Multi-Asset Support
+export interface StellarAsset {
+  code: string;
+  issuer?: string; // undefined for native XLM
+  name: string;
+  description?: string;
+  type: 'native' | 'credit_alphanum4' | 'credit_alphanum12';
+  isNative: boolean;
+}
+
+export interface TrustlineOptions {
+  limit?: string; // Maximum amount willing to hold (default: max)
+}
+
+// Popular Stellar Assets
+export const STELLAR_ASSETS = {
+  XLM: {
+    code: 'XLM',
+    issuer: undefined,
+    name: 'Stellar Lumens',
+    description: 'Native Stellar asset',
+    type: 'native' as const,
+    isNative: true,
+  },
+  USDC_TESTNET: {
+    code: 'USDC',
+    issuer: 'GBBD47IF6LWK7P7MDEVSCWR7DPUWV3NY3DTQEVFL4NAT4AQH3ZLLFLA5',
+    name: 'USD Coin (Testnet)',
+    description: 'Circle stablecoin pegged to USD',
+    type: 'credit_alphanum4' as const,
+    isNative: false,
+  },
+  USDC_MAINNET: {
+    code: 'USDC',
+    issuer: 'GA5ZSEJYB37JRC5AVCIA5MOP4RHTM335X2KGX3IHOJAPP5RE34K4KZVN',
+    name: 'USD Coin',
+    description: 'Circle stablecoin pegged to USD',
+    type: 'credit_alphanum4' as const,
+    isNative: false,
+  },
+} as const;
 
 export interface WalletState {
   wallet: StellarWallet | null;

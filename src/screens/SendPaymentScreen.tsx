@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   View,
   Text,
@@ -12,10 +12,17 @@ import {
   Platform,
 } from 'react-native';
 import { useWallet } from '../context/WalletContext';
-import { Send, X } from 'lucide-react-native';
+import { Send, X, ChevronDown } from 'lucide-react-native';
+import { StellarService } from '../services/stellarService';
+import { StellarAsset, STELLAR_ASSETS } from '../types/wallet';
 
 interface SendPaymentScreenProps {
   onClose: () => void;
+}
+
+interface AssetOption {
+  asset: StellarAsset;
+  balance: string;
 }
 
 const SendPaymentScreen: React.FC<SendPaymentScreenProps> = ({ onClose }) => {
@@ -24,6 +31,76 @@ const SendPaymentScreen: React.FC<SendPaymentScreenProps> = ({ onClose }) => {
   const [amount, setAmount] = useState('');
   const [memo, setMemo] = useState('');
   const [isSending, setIsSending] = useState(false);
+  const [selectedAsset, setSelectedAsset] = useState<StellarAsset>(STELLAR_ASSETS.XLM);
+  const [availableAssets, setAvailableAssets] = useState<AssetOption[]>([]);
+  const [showAssetPicker, setShowAssetPicker] = useState(false);
+  const [loadingAssets, setLoadingAssets] = useState(true);
+
+  // Load available assets on mount
+  useEffect(() => {
+    loadAvailableAssets();
+  }, [wallet.wallet?.publicKey]);
+
+  const loadAvailableAssets = async () => {
+    if (!wallet.wallet?.publicKey) return;
+
+    try {
+      setLoadingAssets(true);
+      const balances = await StellarService.getAllBalances(wallet.wallet.publicKey);
+
+      const assets: AssetOption[] = balances.map((balance) => {
+        if (balance.asset_type === 'native') {
+          return {
+            asset: STELLAR_ASSETS.XLM,
+            balance: balance.balance,
+          };
+        } else {
+          // Check if it's USDC
+          const usdcAsset = StellarService.getUSDCAsset();
+          if (balance.asset_code === usdcAsset.code && balance.asset_issuer === usdcAsset.issuer) {
+            return {
+              asset: usdcAsset,
+              balance: balance.balance,
+            };
+          }
+
+          // Other assets
+          return {
+            asset: {
+              code: balance.asset_code || 'Unknown',
+              issuer: balance.asset_issuer,
+              name: balance.asset_code || 'Unknown Asset',
+              type: balance.asset_type as any,
+              isNative: false,
+            },
+            balance: balance.balance,
+          };
+        }
+      });
+
+      setAvailableAssets(assets);
+
+      // Set initial selected asset to first one (usually XLM)
+      if (assets.length > 0) {
+        setSelectedAsset(assets[0].asset);
+      }
+    } catch (error) {
+      console.error('Error loading assets:', error);
+      setAvailableAssets([{
+        asset: STELLAR_ASSETS.XLM,
+        balance: wallet.balance,
+      }]);
+    } finally {
+      setLoadingAssets(false);
+    }
+  };
+
+  const getSelectedAssetBalance = (): string => {
+    const assetOption = availableAssets.find(
+      (a) => a.asset.code === selectedAsset.code && a.asset.issuer === selectedAsset.issuer
+    );
+    return assetOption?.balance || '0';
+  };
 
   const handleSend = async () => {
     // Validation
@@ -38,17 +115,17 @@ const SendPaymentScreen: React.FC<SendPaymentScreenProps> = ({ onClose }) => {
     }
 
     const amountNum = parseFloat(amount);
-    const availableBalance = parseFloat(wallet.balance);
+    const availableBalance = parseFloat(getSelectedAssetBalance());
 
     if (amountNum > availableBalance) {
-      Alert.alert('Error', 'Insufficient balance');
+      Alert.alert('Error', `Insufficient ${selectedAsset.code} balance`);
       return;
     }
 
     // Confirm transaction
     Alert.alert(
       'Confirm Transaction',
-      `Send ${amount} XLM to:\n${recipient.substring(0, 8)}...${recipient.substring(
+      `Send ${amount} ${selectedAsset.code} to:\n${recipient.substring(0, 8)}...${recipient.substring(
         recipient.length - 8
       )}${memo ? `\nMemo: ${memo}` : ''}`,
       [
@@ -61,7 +138,25 @@ const SendPaymentScreen: React.FC<SendPaymentScreenProps> = ({ onClose }) => {
           onPress: async () => {
             try {
               setIsSending(true);
-              const txHash = await wallet.sendPayment(recipient.trim(), amount, memo || undefined);
+
+              // Use the new sendPaymentWithAsset method if not XLM
+              let txHash: string;
+              if (selectedAsset.isNative) {
+                // Use old method for XLM
+                txHash = await wallet.sendPayment(recipient.trim(), amount, memo || undefined);
+              } else {
+                // Use new method for other assets
+                if (!wallet.wallet?.secretKey) {
+                  throw new Error('Wallet secret key not available');
+                }
+                txHash = await StellarService.sendPaymentWithAsset(
+                  wallet.wallet.secretKey,
+                  recipient.trim(),
+                  amount,
+                  selectedAsset,
+                  memo || undefined
+                );
+              }
 
               Alert.alert('Success', `Transaction sent!\nHash: ${txHash.substring(0, 16)}...`, [
                 {
@@ -69,6 +164,9 @@ const SendPaymentScreen: React.FC<SendPaymentScreenProps> = ({ onClose }) => {
                   onPress: onClose,
                 },
               ]);
+
+              // Refresh balance
+              await wallet.refreshBalance();
             } catch (error) {
               console.error('Error sending payment:', error);
               Alert.alert('Error', 'Failed to send payment. Please try again.');
@@ -87,7 +185,7 @@ const SendPaymentScreen: React.FC<SendPaymentScreenProps> = ({ onClose }) => {
       behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
     >
       <View style={styles.header}>
-        <Text style={styles.title}>Send XLM</Text>
+        <Text style={styles.title}>Send Payment</Text>
         <TouchableOpacity onPress={onClose} style={styles.closeButton}>
           <X size={24} color="#FFFFFF" />
         </TouchableOpacity>
@@ -96,7 +194,48 @@ const SendPaymentScreen: React.FC<SendPaymentScreenProps> = ({ onClose }) => {
       <ScrollView style={styles.content} showsVerticalScrollIndicator={false}>
         <View style={styles.balanceCard}>
           <Text style={styles.balanceLabel}>Available Balance</Text>
-          <Text style={styles.balanceAmount}>{wallet.balance} XLM</Text>
+          <Text style={styles.balanceAmount}>
+            {loadingAssets ? '...' : parseFloat(getSelectedAssetBalance()).toFixed(2)} {selectedAsset.code}
+          </Text>
+        </View>
+
+        {/* Asset Selector */}
+        <View style={styles.formGroup}>
+          <Text style={styles.label}>Asset</Text>
+          <TouchableOpacity
+            style={styles.assetSelector}
+            onPress={() => setShowAssetPicker(!showAssetPicker)}
+          >
+            <Text style={styles.assetSelectorText}>{selectedAsset.code}</Text>
+            <ChevronDown size={20} color="#FFFFFF" />
+          </TouchableOpacity>
+
+          {/* Asset Picker Dropdown */}
+          {showAssetPicker && availableAssets.length > 0 && (
+            <View style={styles.assetPicker}>
+              {availableAssets.map((assetOption, index) => (
+                <TouchableOpacity
+                  key={`${assetOption.asset.code}-${index}`}
+                  style={[
+                    styles.assetOption,
+                    selectedAsset.code === assetOption.asset.code && styles.assetOptionSelected,
+                  ]}
+                  onPress={() => {
+                    setSelectedAsset(assetOption.asset);
+                    setShowAssetPicker(false);
+                  }}
+                >
+                  <View>
+                    <Text style={styles.assetOptionCode}>{assetOption.asset.code}</Text>
+                    <Text style={styles.assetOptionName}>{assetOption.asset.name}</Text>
+                  </View>
+                  <Text style={styles.assetOptionBalance}>
+                    {parseFloat(assetOption.balance).toFixed(2)}
+                  </Text>
+                </TouchableOpacity>
+              ))}
+            </View>
+          )}
         </View>
 
         <View style={styles.formGroup}>
@@ -113,7 +252,7 @@ const SendPaymentScreen: React.FC<SendPaymentScreenProps> = ({ onClose }) => {
         </View>
 
         <View style={styles.formGroup}>
-          <Text style={styles.label}>Amount (XLM)</Text>
+          <Text style={styles.label}>Amount ({selectedAsset.code})</Text>
           <TextInput
             style={styles.input}
             placeholder="0.00"
@@ -257,6 +396,51 @@ const styles = StyleSheet.create({
     color: '#F5F5F5',
     lineHeight: 18,
     marginBottom: 4,
+  },
+  assetSelector: {
+    backgroundColor: '#1C1C1E',
+    borderRadius: 12,
+    padding: 16,
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+  },
+  assetSelectorText: {
+    fontSize: 16,
+    color: '#FFFFFF',
+    fontWeight: '600',
+  },
+  assetPicker: {
+    marginTop: 8,
+    backgroundColor: '#1C1C1E',
+    borderRadius: 12,
+    overflow: 'hidden',
+  },
+  assetOption: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    padding: 16,
+    borderBottomWidth: 1,
+    borderBottomColor: 'rgba(255, 255, 255, 0.1)',
+  },
+  assetOptionSelected: {
+    backgroundColor: 'rgba(107, 159, 110, 0.2)',
+  },
+  assetOptionCode: {
+    fontSize: 16,
+    color: '#FFFFFF',
+    fontWeight: '600',
+    marginBottom: 2,
+  },
+  assetOptionName: {
+    fontSize: 12,
+    color: '#9CA3AF',
+  },
+  assetOptionBalance: {
+    fontSize: 16,
+    color: '#FFFFFF',
+    fontWeight: '600',
   },
 });
 

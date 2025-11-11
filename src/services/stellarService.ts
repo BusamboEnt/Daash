@@ -1,5 +1,5 @@
 import * as StellarSdk from '@stellar/stellar-sdk';
-import { WalletAccount, WalletBalance, Transaction } from '../types/wallet';
+import { WalletAccount, WalletBalance, Transaction, StellarAsset, TrustlineOptions, STELLAR_ASSETS } from '../types/wallet';
 import LiveActivityService from './liveActivity/LiveActivityService';
 import { LiveActivityType, TransactionStatus } from '../types/liveActivity.types';
 
@@ -323,6 +323,323 @@ export class StellarService {
    */
   static isTestnet(): boolean {
     return USE_TESTNET;
+  }
+
+  /**
+   * Get USDC asset for current network
+   */
+  static getUSDCAsset(): StellarAsset {
+    return USE_TESTNET ? STELLAR_ASSETS.USDC_TESTNET : STELLAR_ASSETS.USDC_MAINNET;
+  }
+
+  /**
+   * Get all balances including all assets
+   */
+  static async getAllBalances(publicKey: string): Promise<WalletBalance[]> {
+    try {
+      const account = await this.getAccount(publicKey);
+      if (!account) {
+        return [];
+      }
+      return account.balances;
+    } catch (error) {
+      console.error('Error fetching all balances:', error);
+      return [];
+    }
+  }
+
+  /**
+   * Get balance for specific asset
+   */
+  static async getAssetBalance(publicKey: string, asset: StellarAsset): Promise<string> {
+    try {
+      const balances = await this.getAllBalances(publicKey);
+
+      if (asset.isNative) {
+        const nativeBalance = balances.find((b) => b.asset_type === 'native');
+        return nativeBalance?.balance || '0';
+      } else {
+        const assetBalance = balances.find(
+          (b) => b.asset_code === asset.code && b.asset_issuer === asset.issuer
+        );
+        return assetBalance?.balance || '0';
+      }
+    } catch (error) {
+      console.error('Error fetching asset balance:', error);
+      return '0';
+    }
+  }
+
+  /**
+   * Check if account has trustline for asset
+   */
+  static async hasTrustline(publicKey: string, asset: StellarAsset): Promise<boolean> {
+    if (asset.isNative) {
+      return true; // Native asset always has "trustline"
+    }
+
+    try {
+      const balances = await this.getAllBalances(publicKey);
+      return balances.some(
+        (b) => b.asset_code === asset.code && b.asset_issuer === asset.issuer
+      );
+    } catch (error) {
+      console.error('Error checking trustline:', error);
+      return false;
+    }
+  }
+
+  /**
+   * Create trustline (add asset to wallet)
+   */
+  static async createTrustline(
+    sourceSecret: string,
+    asset: StellarAsset,
+    options?: TrustlineOptions
+  ): Promise<string> {
+    if (asset.isNative) {
+      throw new Error('Cannot create trustline for native asset');
+    }
+
+    try {
+      const server = this.getServer();
+      const sourceKeypair = StellarSdk.Keypair.fromSecret(sourceSecret);
+      const sourcePublicKey = sourceKeypair.publicKey();
+
+      // Load source account
+      const sourceAccount = await server.loadAccount(sourcePublicKey);
+
+      // Create the asset
+      const stellarAsset = new StellarSdk.Asset(asset.code, asset.issuer!);
+
+      // Build transaction
+      const transaction = new StellarSdk.TransactionBuilder(sourceAccount, {
+        fee: StellarSdk.BASE_FEE,
+        networkPassphrase: USE_TESTNET
+          ? StellarSdk.Networks.TESTNET
+          : StellarSdk.Networks.PUBLIC,
+      })
+        .addOperation(
+          StellarSdk.Operation.changeTrust({
+            asset: stellarAsset,
+            limit: options?.limit,
+          })
+        )
+        .setTimeout(30)
+        .build();
+
+      // Sign transaction
+      transaction.sign(sourceKeypair);
+
+      // Submit transaction
+      const result = await server.submitTransaction(transaction);
+
+      console.log('Trustline created successfully:', result.hash);
+      return result.hash;
+    } catch (error) {
+      console.error('Error creating trustline:', error);
+      throw new Error('Failed to create trustline');
+    }
+  }
+
+  /**
+   * Remove trustline (remove asset from wallet)
+   * Note: Can only remove if balance is 0
+   */
+  static async removeTrustline(
+    sourceSecret: string,
+    asset: StellarAsset
+  ): Promise<string> {
+    if (asset.isNative) {
+      throw new Error('Cannot remove trustline for native asset');
+    }
+
+    try {
+      const server = this.getServer();
+      const sourceKeypair = StellarSdk.Keypair.fromSecret(sourceSecret);
+      const sourcePublicKey = sourceKeypair.publicKey();
+
+      // Check balance is 0
+      const balance = await this.getAssetBalance(sourcePublicKey, asset);
+      if (parseFloat(balance) !== 0) {
+        throw new Error('Cannot remove trustline with non-zero balance');
+      }
+
+      // Load source account
+      const sourceAccount = await server.loadAccount(sourcePublicKey);
+
+      // Create the asset
+      const stellarAsset = new StellarSdk.Asset(asset.code, asset.issuer!);
+
+      // Build transaction with limit 0 to remove trustline
+      const transaction = new StellarSdk.TransactionBuilder(sourceAccount, {
+        fee: StellarSdk.BASE_FEE,
+        networkPassphrase: USE_TESTNET
+          ? StellarSdk.Networks.TESTNET
+          : StellarSdk.Networks.PUBLIC,
+      })
+        .addOperation(
+          StellarSdk.Operation.changeTrust({
+            asset: stellarAsset,
+            limit: '0', // Setting limit to 0 removes the trustline
+          })
+        )
+        .setTimeout(30)
+        .build();
+
+      // Sign transaction
+      transaction.sign(sourceKeypair);
+
+      // Submit transaction
+      const result = await server.submitTransaction(transaction);
+
+      console.log('Trustline removed successfully:', result.hash);
+      return result.hash;
+    } catch (error) {
+      console.error('Error removing trustline:', error);
+      throw new Error('Failed to remove trustline');
+    }
+  }
+
+  /**
+   * Send payment with any asset (updated to support multi-asset)
+   */
+  static async sendPaymentWithAsset(
+    sourceSecret: string,
+    destinationPublicKey: string,
+    amount: string,
+    asset: StellarAsset,
+    memo?: string,
+    recipientName?: string
+  ): Promise<string> {
+    let activityStarted = false;
+    const tempTxId = `pending-${Date.now()}`;
+
+    try {
+      const server = this.getServer();
+      const sourceKeypair = StellarSdk.Keypair.fromSecret(sourceSecret);
+      const sourcePublicKey = sourceKeypair.publicKey();
+
+      // 1. Start Live Activity (iOS only, gracefully fails on Android)
+      await LiveActivityService.startTransactionActivity(tempTxId, {
+        type: LiveActivityType.TRANSACTION,
+        amount,
+        asset: asset.code,
+        recipient: destinationPublicKey,
+        recipientName,
+        status: TransactionStatus.PENDING,
+        progress: 0,
+      });
+      activityStarted = true;
+
+      // Load source account
+      const sourceAccount = await server.loadAccount(sourcePublicKey);
+
+      // Update: 20% - Account loaded
+      if (activityStarted) {
+        await LiveActivityService.updateTransactionActivity(tempTxId, {
+          status: TransactionStatus.PENDING,
+          progress: 20,
+        });
+      }
+
+      // Create Stellar Asset
+      const stellarAsset = asset.isNative
+        ? StellarSdk.Asset.native()
+        : new StellarSdk.Asset(asset.code, asset.issuer!);
+
+      // Build transaction
+      let transaction = new StellarSdk.TransactionBuilder(sourceAccount, {
+        fee: StellarSdk.BASE_FEE,
+        networkPassphrase: USE_TESTNET
+          ? StellarSdk.Networks.TESTNET
+          : StellarSdk.Networks.PUBLIC,
+      })
+        .addOperation(
+          StellarSdk.Operation.payment({
+            destination: destinationPublicKey,
+            asset: stellarAsset,
+            amount: amount,
+          })
+        )
+        .setTimeout(30);
+
+      // Add memo if provided
+      if (memo) {
+        transaction = transaction.addMemo(StellarSdk.Memo.text(memo));
+      }
+
+      const builtTransaction = transaction.build();
+
+      // Sign transaction
+      builtTransaction.sign(sourceKeypair);
+
+      // Update: 40% - Transaction signed
+      if (activityStarted) {
+        await LiveActivityService.updateTransactionActivity(tempTxId, {
+          status: TransactionStatus.PENDING,
+          progress: 40,
+        });
+      }
+
+      // Submit transaction
+      const result = await server.submitTransaction(builtTransaction);
+      const txHash = result.hash;
+
+      // Update: 60% - Transaction submitted
+      if (activityStarted) {
+        await LiveActivityService.updateTransactionActivity(tempTxId, {
+          status: TransactionStatus.CONFIRMING,
+          progress: 60,
+          txHash,
+        });
+
+        // Update activity mapping to use real tx hash
+        const activityId = LiveActivityService.getActivityId(tempTxId);
+        if (activityId) {
+          // Remove temp ID and add real hash
+          LiveActivityService['activities'].delete(tempTxId);
+          LiveActivityService['activities'].set(txHash, activityId);
+        }
+      }
+
+      // Simulate confirmation progress (Stellar is fast, but we want to show progress)
+      if (activityStarted) {
+        await this.simulateConfirmationProgress(txHash);
+      }
+
+      // Update: 100% - Confirmed
+      if (activityStarted) {
+        await LiveActivityService.updateTransactionActivity(txHash, {
+          status: TransactionStatus.COMPLETED,
+          progress: 100,
+        });
+
+        // End activity after 5 seconds
+        setTimeout(async () => {
+          await LiveActivityService.endTransactionActivity(txHash);
+        }, 5000);
+      }
+
+      return result.hash;
+    } catch (error) {
+      console.error('Error sending payment:', error);
+
+      // Update Live Activity to failed
+      if (activityStarted) {
+        await LiveActivityService.updateTransactionActivity(tempTxId, {
+          status: TransactionStatus.FAILED,
+          progress: 0,
+        });
+
+        // End activity after 3 seconds
+        setTimeout(async () => {
+          await LiveActivityService.endTransactionActivity(tempTxId);
+        }, 3000);
+      }
+
+      throw new Error('Failed to send payment');
+    }
   }
 }
 

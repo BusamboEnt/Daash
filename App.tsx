@@ -9,6 +9,8 @@ import { createDrawerNavigator } from '@react-navigation/drawer';
 import type { BottomTabScreenProps } from '@react-navigation/bottom-tabs';
 import { Home, Search, User } from 'lucide-react-native';
 import { Header, AdvancedBalanceCard, TransactionList, DrawerMenu } from './src/components';
+import AssetList from './src/components/AssetList';
+import AddAssetModal from './src/components/AddAssetModal';
 import { WalletProvider, useWallet } from './src/context/WalletContext';
 import { NotificationProvider, useNotifications } from './src/context/NotificationContext';
 import NotificationService from './src/services/notificationService';
@@ -56,6 +58,7 @@ function HomeScreen({ navigation }: HomeProps) {
   const [showSendPayment, setShowSendPayment] = useState(false);
   const [showOnRamp, setShowOnRamp] = useState(false);
   const [showOffRamp, setShowOffRamp] = useState(false);
+  const [showAddAsset, setShowAddAsset] = useState(false);
 
   const handleSearch = (text: string) => {
     console.log('Search:', text);
@@ -119,6 +122,14 @@ function HomeScreen({ navigation }: HomeProps) {
           showEyeIcon={true}
           isLoading={wallet.isLoading}
         />
+        {wallet.wallet && (
+          <AssetList
+            publicKey={wallet.wallet.publicKey}
+            onAddAsset={() => setShowAddAsset(true)}
+            onRefresh={() => wallet.refreshBalance()}
+          />
+        )}
+
         <View style={styles.content}>
           <Text style={styles.title}>Welcome to Daash!</Text>
           <Text style={styles.text}>
@@ -168,6 +179,18 @@ function HomeScreen({ navigation }: HomeProps) {
       >
         <OffRampScreen onClose={() => setShowOffRamp(false)} />
       </Modal>
+
+      {/* Add Asset Modal */}
+      {wallet.wallet?.secretKey && (
+        <AddAssetModal
+          visible={showAddAsset}
+          onClose={() => setShowAddAsset(false)}
+          onAssetAdded={() => {
+            wallet.refreshBalance();
+          }}
+          walletSecret={wallet.wallet.secretKey}
+        />
+      )}
     </View>
   );
 }
