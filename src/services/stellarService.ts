@@ -1,5 +1,7 @@
 import * as StellarSdk from '@stellar/stellar-sdk';
 import { WalletAccount, WalletBalance, Transaction } from '../types/wallet';
+import LiveActivityService from './liveActivity/LiveActivityService';
+import { LiveActivityType, TransactionStatus } from '../types/liveActivity.types';
 
 // Use Testnet for development
 const USE_TESTNET = true;
@@ -167,21 +169,45 @@ export class StellarService {
   }
 
   /**
-   * Send payment
+   * Send payment with Live Activity support
    */
   static async sendPayment(
     sourceSecret: string,
     destinationPublicKey: string,
     amount: string,
-    memo?: string
+    memo?: string,
+    recipientName?: string
   ): Promise<string> {
+    let activityStarted = false;
+    const tempTxId = `pending-${Date.now()}`;
+
     try {
       const server = this.getServer();
       const sourceKeypair = StellarSdk.Keypair.fromSecret(sourceSecret);
       const sourcePublicKey = sourceKeypair.publicKey();
 
+      // 1. Start Live Activity (iOS only, gracefully fails on Android)
+      await LiveActivityService.startTransactionActivity(tempTxId, {
+        type: LiveActivityType.TRANSACTION,
+        amount,
+        asset: 'XLM',
+        recipient: destinationPublicKey,
+        recipientName,
+        status: TransactionStatus.PENDING,
+        progress: 0,
+      });
+      activityStarted = true;
+
       // Load source account
       const sourceAccount = await server.loadAccount(sourcePublicKey);
+
+      // Update: 20% - Account loaded
+      if (activityStarted) {
+        await LiveActivityService.updateTransactionActivity(tempTxId, {
+          status: TransactionStatus.PENDING,
+          progress: 20,
+        });
+      }
 
       // Build transaction
       let transaction = new StellarSdk.TransactionBuilder(sourceAccount, {
@@ -209,13 +235,86 @@ export class StellarService {
       // Sign transaction
       builtTransaction.sign(sourceKeypair);
 
+      // Update: 40% - Transaction signed
+      if (activityStarted) {
+        await LiveActivityService.updateTransactionActivity(tempTxId, {
+          status: TransactionStatus.PENDING,
+          progress: 40,
+        });
+      }
+
       // Submit transaction
       const result = await server.submitTransaction(builtTransaction);
+      const txHash = result.hash;
+
+      // Update: 60% - Transaction submitted
+      if (activityStarted) {
+        await LiveActivityService.updateTransactionActivity(tempTxId, {
+          status: TransactionStatus.CONFIRMING,
+          progress: 60,
+          txHash,
+        });
+
+        // Update activity mapping to use real tx hash
+        const activityId = LiveActivityService.getActivityId(tempTxId);
+        if (activityId) {
+          // Remove temp ID and add real hash
+          LiveActivityService['activities'].delete(tempTxId);
+          LiveActivityService['activities'].set(txHash, activityId);
+        }
+      }
+
+      // Simulate confirmation progress (Stellar is fast, but we want to show progress)
+      if (activityStarted) {
+        await this.simulateConfirmationProgress(txHash);
+      }
+
+      // Update: 100% - Confirmed
+      if (activityStarted) {
+        await LiveActivityService.updateTransactionActivity(txHash, {
+          status: TransactionStatus.COMPLETED,
+          progress: 100,
+        });
+
+        // End activity after 5 seconds
+        setTimeout(async () => {
+          await LiveActivityService.endTransactionActivity(txHash);
+        }, 5000);
+      }
 
       return result.hash;
     } catch (error) {
       console.error('Error sending payment:', error);
+
+      // Update Live Activity to failed
+      if (activityStarted) {
+        await LiveActivityService.updateTransactionActivity(tempTxId, {
+          status: TransactionStatus.FAILED,
+          progress: 0,
+        });
+
+        // End activity after 3 seconds
+        setTimeout(async () => {
+          await LiveActivityService.endTransactionActivity(tempTxId);
+        }, 3000);
+      }
+
       throw new Error('Failed to send payment');
+    }
+  }
+
+  /**
+   * Simulate transaction confirmation progress
+   * Stellar transactions are fast, but we want to show visual progress
+   */
+  private static async simulateConfirmationProgress(txHash: string): Promise<void> {
+    const steps = [70, 80, 90];
+    for (const progress of steps) {
+      await new Promise((resolve) => setTimeout(resolve, 500)); // 0.5 second delay
+      await LiveActivityService.updateTransactionActivity(txHash, {
+        status: TransactionStatus.CONFIRMING,
+        progress,
+      });
     }
   }
 

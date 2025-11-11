@@ -1,0 +1,23 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+    <!-- Enable Live Activities -->
+    <key>NSSupportsLiveActivities</key>
+    <true/>
+
+    <!-- Enable frequent updates for Live Activities -->
+    <key>NSSupportsLiveActivitiesFrequentUpdates</key>
+    <true/>
+
+    <!-- Notification permissions -->
+    <key>NSUserNotificationsUsageDescription</key>
+    <string>Allow Daash to send you notifications about transactions, payments, and account activity.</string>
+
+    <!-- Background modes (if needed for push notifications) -->
+    <key>UIBackgroundModes</key>
+    <array>
+        <string>remote-notification</string>
+    </array>
+</dict>
+</plist>

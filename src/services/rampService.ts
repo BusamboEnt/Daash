@@ -1,5 +1,7 @@
 import { RampTransaction, RampType, RampStatus, KYCInfo, KYCStatus, KYCLevel } from '../types/wallet';
 import { SupabaseService } from './supabaseService';
+import LiveActivityService from './liveActivity/LiveActivityService';
+import { LiveActivityType, OnRampStatus } from '../types/liveActivity.types';
 
 // Ramp Network Configuration
 const RAMP_CONFIG = {
@@ -54,10 +56,81 @@ export class RampService {
         }
       }
 
+      // Start Live Activity for on-ramp (iOS only)
+      await this.startOnRampLiveActivity(transaction);
+
       return transaction;
     } catch (error) {
       console.error('Error initiating on-ramp:', error);
       throw new Error('Failed to initiate on-ramp transaction');
+    }
+  }
+
+  /**
+   * Start Live Activity for on-ramp transaction
+   */
+  private static async startOnRampLiveActivity(transaction: RampTransaction): Promise<void> {
+    try {
+      await LiveActivityService.startOnRampActivity(transaction.id, {
+        type: LiveActivityType.ONRAMP,
+        fiatAmount: transaction.fiatAmount.toString(),
+        fiatCurrency: transaction.fiatCurrency,
+        cryptoAmount: transaction.cryptoAmount || '0',
+        cryptoAsset: transaction.cryptoAsset,
+        status: OnRampStatus.INITIATED,
+        progress: 10,
+        provider: 'Ramp Network',
+      });
+    } catch (error) {
+      console.error('Failed to start on-ramp Live Activity:', error);
+      // Don't throw - Live Activity is optional
+    }
+  }
+
+  /**
+   * Update on-ramp Live Activity progress
+   */
+  static async updateOnRampProgress(
+    transactionId: string,
+    status: OnRampStatus,
+    progress: number,
+    cryptoAmount?: string
+  ): Promise<void> {
+    try {
+      const updates: any = {
+        status,
+        progress,
+      };
+
+      if (cryptoAmount) {
+        updates.cryptoAmount = cryptoAmount;
+      }
+
+      await LiveActivityService.updateOnRampActivity(transactionId, updates);
+    } catch (error) {
+      console.error('Failed to update on-ramp Live Activity:', error);
+    }
+  }
+
+  /**
+   * Complete on-ramp Live Activity
+   */
+  static async completeOnRampLiveActivity(
+    transactionId: string,
+    success: boolean
+  ): Promise<void> {
+    try {
+      await LiveActivityService.updateOnRampActivity(transactionId, {
+        status: success ? OnRampStatus.COMPLETED : OnRampStatus.FAILED,
+        progress: success ? 100 : 0,
+      });
+
+      // End activity after delay
+      setTimeout(async () => {
+        await LiveActivityService.endOnRampActivity(transactionId);
+      }, success ? 5000 : 3000);
+    } catch (error) {
+      console.error('Failed to complete on-ramp Live Activity:', error);
     }
   }
 
