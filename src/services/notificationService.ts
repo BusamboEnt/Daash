@@ -1,4 +1,4 @@
-import { Platform, Alert } from 'react-native';
+import { Platform, Alert, PermissionsAndroid } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import {
   AppNotification,
@@ -6,33 +6,257 @@ import {
   NotificationPriority,
   NotificationSettings,
 } from '../types/notification';
+import { supabase } from '../lib/supabase';
 
 const NOTIFICATIONS_STORAGE_KEY = '@daash_notifications';
 const NOTIFICATION_SETTINGS_KEY = '@daash_notification_settings';
+const FCM_TOKEN_KEY = '@daash_fcm_token';
+
+// Dynamically import Firebase with fallback for Expo Go
+let messaging: any = null;
+let isFirebaseAvailable = false;
+
+try {
+  messaging = require('@react-native-firebase/messaging').default;
+  isFirebaseAvailable = true;
+  console.log('✅ Firebase Cloud Messaging available');
+} catch (error) {
+  console.warn('⚠️ Firebase not available - running in Expo Go mode');
+  isFirebaseAvailable = false;
+}
 
 class NotificationService {
+  private fcmToken: string | null = null;
+
   /**
-   * Request notification permissions from the user
-   * Note: Native notifications removed for Expo Go compatibility
+   * Initialize Firebase Cloud Messaging
+   * Call this when app starts
    */
-  async requestPermissions(): Promise<boolean> {
-    console.log('Native notifications not available - using in-app notifications only');
-    return false;
+  async initialize(walletAddress?: string): Promise<void> {
+    if (!isFirebaseAvailable || !messaging) {
+      console.log('Firebase not available - skipping FCM initialization');
+      return;
+    }
+
+    try {
+      // Request permission
+      const hasPermission = await this.requestPermissions();
+      if (!hasPermission) {
+        console.log('Push notification permission not granted');
+        return;
+      }
+
+      // Get FCM token
+      const token = await this.getFCMToken();
+      if (token && walletAddress) {
+        // Register token with Supabase
+        await this.registerFCMToken(token, walletAddress);
+      }
+
+      // Listen for token refresh
+      this.setupTokenRefreshListener(walletAddress);
+
+      // Handle foreground messages
+      this.setupForegroundMessageHandler();
+
+      // Handle background/quit state messages
+      this.setupBackgroundMessageHandler();
+
+      console.log('✅ Firebase Cloud Messaging initialized');
+    } catch (error) {
+      console.error('Error initializing FCM:', error);
+    }
   }
 
   /**
-   * Schedule a local notification
-   * Note: Native notifications removed for Expo Go compatibility
+   * Request notification permissions
    */
-  async scheduleNotification(
-    title: string,
-    body: string,
-    data?: Record<string, any>,
-    delaySeconds: number = 0
-  ): Promise<string | null> {
-    // In-app notifications only - no native notifications
-    console.log('Notification scheduled (in-app only):', title, body);
-    return null;
+  async requestPermissions(): Promise<boolean> {
+    if (!isFirebaseAvailable || !messaging) {
+      console.log('Firebase not available - skipping permission request');
+      return false;
+    }
+
+    try {
+      if (Platform.OS === 'android') {
+        if (Platform.Version >= 33) {
+          const granted = await PermissionsAndroid.request(
+            PermissionsAndroid.PERMISSIONS.POST_NOTIFICATIONS
+          );
+          if (granted !== PermissionsAndroid.RESULTS.GRANTED) {
+            console.log('Android notification permission denied');
+            return false;
+          }
+        }
+      }
+
+      // Request iOS permission
+      const authStatus = await messaging().requestPermission();
+      const enabled =
+        authStatus === messaging.AuthorizationStatus.AUTHORIZED ||
+        authStatus === messaging.AuthorizationStatus.PROVISIONAL;
+
+      if (enabled) {
+        console.log('✅ Push notification permission granted');
+      } else {
+        console.log('❌ Push notification permission denied');
+      }
+
+      return enabled;
+    } catch (error) {
+      console.error('Error requesting notification permissions:', error);
+      return false;
+    }
+  }
+
+  /**
+   * Get FCM token from device
+   */
+  async getFCMToken(): Promise<string | null> {
+    if (!isFirebaseAvailable || !messaging) {
+      return null;
+    }
+
+    try {
+      // Check if we have cached token
+      const cachedToken = await AsyncStorage.getItem(FCM_TOKEN_KEY);
+      if (cachedToken) {
+        this.fcmToken = cachedToken;
+        return cachedToken;
+      }
+
+      // Get new token
+      const token = await messaging().getToken();
+      if (token) {
+        this.fcmToken = token;
+        await AsyncStorage.setItem(FCM_TOKEN_KEY, token);
+        console.log('✅ FCM Token obtained:', token.substring(0, 20) + '...');
+        return token;
+      }
+
+      return null;
+    } catch (error) {
+      console.error('Error getting FCM token:', error);
+      return null;
+    }
+  }
+
+  /**
+   * Register FCM token with Supabase
+   */
+  async registerFCMToken(fcmToken: string, walletAddress: string): Promise<void> {
+    try {
+      const deviceInfo = {
+        platform: Platform.OS,
+        version: Platform.Version,
+        model: Platform.constants?.Model || 'unknown',
+      };
+
+      // Upsert token in Supabase
+      const { error } = await supabase.from('push_tokens').upsert(
+        {
+          wallet_address: walletAddress,
+          fcm_token: fcmToken,
+          platform: Platform.OS,
+          device_info: deviceInfo,
+          updated_at: new Date().toISOString(),
+        },
+        {
+          onConflict: 'wallet_address,platform',
+        }
+      );
+
+      if (error) {
+        console.error('Error registering FCM token:', error);
+      } else {
+        console.log('✅ FCM token registered with Supabase');
+      }
+    } catch (error) {
+      console.error('Error registering FCM token:', error);
+    }
+  }
+
+  /**
+   * Unregister FCM token (on logout)
+   */
+  async unregisterFCMToken(walletAddress: string): Promise<void> {
+    try {
+      const { error } = await supabase
+        .from('push_tokens')
+        .delete()
+        .eq('wallet_address', walletAddress);
+
+      if (error) {
+        console.error('Error unregistering FCM token:', error);
+      } else {
+        console.log('✅ FCM token unregistered');
+      }
+
+      // Clear cached token
+      await AsyncStorage.removeItem(FCM_TOKEN_KEY);
+      this.fcmToken = null;
+    } catch (error) {
+      console.error('Error unregistering FCM token:', error);
+    }
+  }
+
+  /**
+   * Setup token refresh listener
+   */
+  private setupTokenRefreshListener(walletAddress?: string): void {
+    if (!isFirebaseAvailable || !messaging || !walletAddress) return;
+
+    messaging().onTokenRefresh(async (token: string) => {
+      console.log('📱 FCM token refreshed');
+      this.fcmToken = token;
+      await AsyncStorage.setItem(FCM_TOKEN_KEY, token);
+      await this.registerFCMToken(token, walletAddress);
+    });
+  }
+
+  /**
+   * Handle foreground messages
+   */
+  private setupForegroundMessageHandler(): void {
+    if (!isFirebaseAvailable || !messaging) return;
+
+    messaging().onMessage(async (remoteMessage: any) => {
+      console.log('📬 Foreground notification received:', remoteMessage);
+
+      // Create in-app notification
+      if (remoteMessage.notification) {
+        const { title, body } = remoteMessage.notification;
+        const data = remoteMessage.data || {};
+
+        // Determine notification type
+        let type = NotificationType.GENERAL;
+        if (data.type === 'transaction_received') {
+          type = NotificationType.TRANSACTION_RECEIVED;
+        } else if (data.type === 'transaction_sent') {
+          type = NotificationType.TRANSACTION_SENT;
+        }
+
+        await this.createAppNotification(
+          type,
+          title || 'Notification',
+          body || '',
+          data,
+          NotificationPriority.HIGH
+        );
+      }
+    });
+  }
+
+  /**
+   * Handle background/quit state messages
+   */
+  private setupBackgroundMessageHandler(): void {
+    if (!isFirebaseAvailable || !messaging) return;
+
+    messaging().setBackgroundMessageHandler(async (remoteMessage: any) => {
+      console.log('📬 Background notification received:', remoteMessage);
+      // Background notifications are handled by Firebase automatically
+    });
   }
 
   /**
@@ -226,7 +450,8 @@ class NotificationService {
   }
 
   /**
-   * Send a transaction notification
+   * Send a transaction notification (creates in-app notification)
+   * Push notification is sent from backend
    */
   async notifyTransaction(
     type: 'sent' | 'received',
@@ -239,14 +464,13 @@ class NotificationService {
     const title = type === 'received' ? 'Payment Received' : 'Payment Sent';
     const body = `${type === 'received' ? '+' : '-'}${amount} ${asset}`;
 
-    await this.scheduleNotification(title, body, { type: 'transaction', amount, asset });
     await this.createAppNotification(
       type === 'received'
         ? NotificationType.TRANSACTION_RECEIVED
         : NotificationType.TRANSACTION_SENT,
       title,
       body,
-      { amount, asset },
+      { amount, asset, type: `transaction_${type}` },
       NotificationPriority.HIGH
     );
   }
@@ -258,7 +482,6 @@ class NotificationService {
     const settings = await this.getSettings();
     if (!settings.enabled || !settings.generalNotifications) return;
 
-    await this.scheduleNotification(title, body, data);
     await this.createAppNotification(
       NotificationType.GENERAL,
       title,
@@ -275,7 +498,6 @@ class NotificationService {
     const settings = await this.getSettings();
     if (!settings.enabled || !settings.securityAlerts) return;
 
-    await this.scheduleNotification(title, body, data);
     await this.createAppNotification(
       NotificationType.SECURITY_ALERT,
       title,
@@ -292,7 +514,6 @@ class NotificationService {
     const settings = await this.getSettings();
     if (!settings.enabled || !settings.kycUpdates) return;
 
-    await this.scheduleNotification(title, body, data);
     await this.createAppNotification(
       NotificationType.KYC_UPDATE,
       title,

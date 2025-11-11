@@ -2,6 +2,7 @@ import React, { createContext, useState, useContext, useEffect, ReactNode } from
 import { WalletService } from '../services/walletService';
 import { StellarService } from '../services/stellarService';
 import { StellarWallet, WalletAccount, WalletState } from '../types/wallet';
+import NotificationService from '../services/notificationService';
 
 interface WalletContextType extends WalletState {
   createWallet: () => Promise<void>;
@@ -71,6 +72,9 @@ export const WalletProvider: React.FC<WalletProviderProps> = ({ children }) => {
 
       // Refresh balance
       await refreshBalance();
+
+      // Initialize Firebase Cloud Messaging with wallet address
+      await NotificationService.initialize(newWallet.publicKey);
     } catch (error) {
       console.error('Error creating wallet:', error);
       setState((prev) => ({
@@ -105,6 +109,9 @@ export const WalletProvider: React.FC<WalletProviderProps> = ({ children }) => {
 
       // Refresh balance
       await refreshBalance();
+
+      // Initialize Firebase Cloud Messaging with wallet address
+      await NotificationService.initialize(loadedWallet.publicKey);
     } catch (error) {
       console.error('Error loading wallet:', error);
       setState((prev) => ({
@@ -131,6 +138,9 @@ export const WalletProvider: React.FC<WalletProviderProps> = ({ children }) => {
 
       // Refresh balance
       await refreshBalance();
+
+      // Initialize Firebase Cloud Messaging with wallet address
+      await NotificationService.initialize(importedWallet.publicKey);
     } catch (error) {
       console.error('Error importing wallet:', error);
       setState((prev) => ({
