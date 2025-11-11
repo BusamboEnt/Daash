@@ -6,7 +6,7 @@ import {
   NotificationPriority,
   NotificationSettings,
 } from '../types/notification';
-import { supabase } from '../lib/supabase';
+import { supabase } from '../config/supabase';
 
 const NOTIFICATIONS_STORAGE_KEY = '@daash_notifications';
 const NOTIFICATION_SETTINGS_KEY = '@daash_notification_settings';
