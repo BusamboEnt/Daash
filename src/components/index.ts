@@ -8,3 +8,6 @@ export { default as TransactionDetailModal } from './TransactionDetailModal';
 export { UploadProgress } from './UploadProgress';
 export { DocumentPreview } from './DocumentPreview';
 export { default as DrawerMenu } from './DrawerMenu';
+export { default as SetPINModal } from './SetPINModal';
+export { default as AutoLockTimeoutModal } from './AutoLockTimeoutModal';
+export { default as LanguageSelectorModal } from './LanguageSelectorModal';

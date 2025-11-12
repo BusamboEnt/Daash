@@ -12,6 +12,7 @@ import { Header, AdvancedBalanceCard, TransactionList, DrawerMenu } from './src/
 import AddAssetModal from './src/components/AddAssetModal';
 import { WalletProvider, useWallet } from './src/context/WalletContext';
 import { NotificationProvider, useNotifications } from './src/context/NotificationContext';
+import { SettingsProvider } from './src/contexts/SettingsContext';
 import NotificationService from './src/services/notificationService';
 import WalletSetupScreen from './src/screens/WalletSetupScreen';
 import SendPaymentScreen from './src/screens/SendPaymentScreen';
@@ -274,29 +275,31 @@ export default function App() {
   return (
     <WalletProvider>
       <NotificationProvider>
-        <NavigationContainer>
-          <Drawer.Navigator
-            drawerContent={(props) => <DrawerMenu {...props} />}
-            screenOptions={{
-              headerShown: false,
-              drawerType: 'slide',
-              drawerStyle: {
-                width: 300,
-              },
-            }}
-          >
-            <Drawer.Screen name="MainTabs" component={TabNavigator} />
-            <Drawer.Screen name="Profile" component={ProfileScreen} />
-            <Drawer.Screen name="Settings" component={SettingsScreen} />
-            <Drawer.Screen name="KYC" component={KYCScreen} />
-            <Drawer.Screen name="WalletManagement" component={WalletManagementScreen} />
-            <Drawer.Screen name="WalletLimits" component={WalletLimitsScreen} />
-            <Drawer.Screen name="Support" component={SupportScreen} />
-            <Drawer.Screen name="Legal" component={LegalScreen} />
-            <Drawer.Screen name="About" component={AboutScreen} />
-            <Drawer.Screen name="NotificationCenter" component={NotificationCenterScreen} />
-          </Drawer.Navigator>
-        </NavigationContainer>
+        <SettingsProvider>
+          <NavigationContainer>
+            <Drawer.Navigator
+              drawerContent={(props) => <DrawerMenu {...props} />}
+              screenOptions={{
+                headerShown: false,
+                drawerType: 'slide',
+                drawerStyle: {
+                  width: 300,
+                },
+              }}
+            >
+              <Drawer.Screen name="MainTabs" component={TabNavigator} />
+              <Drawer.Screen name="Profile" component={ProfileScreen} />
+              <Drawer.Screen name="Settings" component={SettingsScreen} />
+              <Drawer.Screen name="KYC" component={KYCScreen} />
+              <Drawer.Screen name="WalletManagement" component={WalletManagementScreen} />
+              <Drawer.Screen name="WalletLimits" component={WalletLimitsScreen} />
+              <Drawer.Screen name="Support" component={SupportScreen} />
+              <Drawer.Screen name="Legal" component={LegalScreen} />
+              <Drawer.Screen name="About" component={AboutScreen} />
+              <Drawer.Screen name="NotificationCenter" component={NotificationCenterScreen} />
+            </Drawer.Navigator>
+          </NavigationContainer>
+        </SettingsProvider>
       </NotificationProvider>
     </WalletProvider>
   );

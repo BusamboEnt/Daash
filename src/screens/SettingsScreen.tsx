@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   View,
   Text,
@@ -7,10 +7,14 @@ import {
   TouchableOpacity,
   Switch,
   SafeAreaView,
+  Alert,
+  ActivityIndicator,
 } from 'react-native';
 import { ChevronRight, Moon, DollarSign, Bell, Lock, ArrowLeft } from 'lucide-react-native';
 import { useNavigation } from '@react-navigation/native';
 import { DrawerActions } from '@react-navigation/native';
+import { useSettings } from '../contexts/SettingsContext';
+import { SetPINModal, AutoLockTimeoutModal, LanguageSelectorModal } from '../components';
 
 interface SettingsScreenProps {
   onClose?: () => void;
@@ -18,20 +22,29 @@ interface SettingsScreenProps {
 
 const SettingsScreen: React.FC<SettingsScreenProps> = ({ onClose }) => {
   const navigation = useNavigation();
-  // Theme Settings
-  const [theme, setTheme] = useState<'light' | 'dark' | 'auto'>('light');
+  const {
+    settings,
+    isLoading,
+    updateTheme,
+    updateCurrency,
+    updateNotificationsEnabled,
+    updatePushNotifications,
+    updateEmailNotifications,
+    updateBiometricEnabled,
+    updatePinEnabled,
+    setPIN: setContextPIN,
+    updateAutoLockTimeout,
+    updateLanguage,
+    clearCache,
+    getCacheSize,
+    resetSettings,
+  } = useSettings();
 
-  // Currency Settings
-  const [currency, setCurrency] = useState('USD');
-
-  // Notification Settings
-  const [notificationsEnabled, setNotificationsEnabled] = useState(true);
-  const [pushNotifications, setPushNotifications] = useState(true);
-  const [emailNotifications, setEmailNotifications] = useState(true);
-
-  // Security Settings
-  const [biometricEnabled, setBiometricEnabled] = useState(false);
-  const [pinEnabled, setPinEnabled] = useState(false);
+  // Modal states
+  const [setPINModalVisible, setSetPINModalVisible] = useState(false);
+  const [timeoutModalVisible, setTimeoutModalVisible] = useState(false);
+  const [languageModalVisible, setLanguageModalVisible] = useState(false);
+  const [cacheSize, setCacheSize] = useState<string>('Calculating...');
 
   const currencies = ['USD', 'EUR', 'GBP', 'JPY', 'CAD', 'AUD'];
   const themes = [
@@ -39,6 +52,96 @@ const SettingsScreen: React.FC<SettingsScreenProps> = ({ onClose }) => {
     { id: 'dark', label: 'Dark' },
     { id: 'auto', label: 'Auto' },
   ];
+
+  // Load cache size on mount
+  useEffect(() => {
+    loadCacheSize();
+  }, []);
+
+  const loadCacheSize = async () => {
+    const size = await getCacheSize();
+    setCacheSize(size);
+  };
+
+  const handlePINToggle = async (enabled: boolean) => {
+    if (enabled) {
+      // Show modal to set PIN
+      setSetPINModalVisible(true);
+    } else {
+      // Disable PIN
+      await updatePinEnabled(false);
+    }
+  };
+
+  const handleSetPIN = async (pin: string) => {
+    try {
+      await setContextPIN(pin);
+    } catch (error) {
+      console.error('Error setting PIN:', error);
+    }
+  };
+
+  const handleChangePIN = () => {
+    setSetPINModalVisible(true);
+  };
+
+  const handleAutoLockTimeoutSelect = async (timeout: number) => {
+    await updateAutoLockTimeout(timeout);
+  };
+
+  const handleLanguageSelect = async (language: string) => {
+    await updateLanguage(language);
+  };
+
+  const handleClearCache = () => {
+    Alert.alert(
+      'Clear Cache',
+      `This will clear ${cacheSize} of cached data. Your wallet and settings will not be affected. Continue?`,
+      [
+        { text: 'Cancel', style: 'cancel' },
+        {
+          text: 'Clear',
+          style: 'destructive',
+          onPress: async () => {
+            await clearCache();
+            await loadCacheSize();
+          },
+        },
+      ]
+    );
+  };
+
+  const handleResetSettings = () => {
+    Alert.alert(
+      'Reset Settings',
+      'This will reset all settings to their default values. Your wallet will not be affected. Continue?',
+      [
+        { text: 'Cancel', style: 'cancel' },
+        {
+          text: 'Reset',
+          style: 'destructive',
+          onPress: async () => {
+            await resetSettings();
+          },
+        },
+      ]
+    );
+  };
+
+  const getTimeoutLabel = (minutes: number): string => {
+    if (minutes === 60) return '1 hour';
+    return `${minutes} minute${minutes !== 1 ? 's' : ''}`;
+  };
+
+  if (isLoading) {
+    return (
+      <SafeAreaView style={styles.container}>
+        <View style={styles.loadingContainer}>
+          <ActivityIndicator size="large" color="#8A784E" />
+        </View>
+      </SafeAreaView>
+    );
+  }
 
   return (
     <SafeAreaView style={styles.container}>
@@ -76,14 +179,14 @@ const SettingsScreen: React.FC<SettingsScreenProps> = ({ onClose }) => {
                   key={themeOption.id}
                   style={[
                     styles.themeButton,
-                    theme === themeOption.id && styles.themeButtonActive,
+                    settings.theme === themeOption.id && styles.themeButtonActive,
                   ]}
-                  onPress={() => setTheme(themeOption.id as any)}
+                  onPress={() => updateTheme(themeOption.id as any)}
                 >
                   <Text
                     style={[
                       styles.themeButtonText,
-                      theme === themeOption.id && styles.themeButtonTextActive,
+                      settings.theme === themeOption.id && styles.themeButtonTextActive,
                     ]}
                   >
                     {themeOption.label}
@@ -109,14 +212,14 @@ const SettingsScreen: React.FC<SettingsScreenProps> = ({ onClose }) => {
                   key={curr}
                   style={[
                     styles.currencyButton,
-                    currency === curr && styles.currencyButtonActive,
+                    settings.currency === curr && styles.currencyButtonActive,
                   ]}
-                  onPress={() => setCurrency(curr)}
+                  onPress={() => updateCurrency(curr)}
                 >
                   <Text
                     style={[
                       styles.currencyButtonText,
-                      currency === curr && styles.currencyButtonTextActive,
+                      settings.currency === curr && styles.currencyButtonTextActive,
                     ]}
                   >
                     {curr}
@@ -138,21 +241,21 @@ const SettingsScreen: React.FC<SettingsScreenProps> = ({ onClose }) => {
             <View style={styles.settingRow}>
               <Text style={styles.settingRowLabel}>Enable Notifications</Text>
               <Switch
-                value={notificationsEnabled}
-                onValueChange={setNotificationsEnabled}
+                value={settings.notificationsEnabled}
+                onValueChange={updateNotificationsEnabled}
                 trackColor={{ false: '#E5E5EA', true: '#8A784E' }}
                 thumbColor="#FFFFFF"
               />
             </View>
 
-            {notificationsEnabled && (
+            {settings.notificationsEnabled && (
               <>
                 <View style={styles.divider} />
                 <View style={styles.settingRow}>
                   <Text style={styles.settingRowLabel}>Push Notifications</Text>
                   <Switch
-                    value={pushNotifications}
-                    onValueChange={setPushNotifications}
+                    value={settings.pushNotifications}
+                    onValueChange={updatePushNotifications}
                     trackColor={{ false: '#E5E5EA', true: '#8A784E' }}
                     thumbColor="#FFFFFF"
                   />
@@ -162,8 +265,8 @@ const SettingsScreen: React.FC<SettingsScreenProps> = ({ onClose }) => {
                 <View style={styles.settingRow}>
                   <Text style={styles.settingRowLabel}>Email Notifications</Text>
                   <Switch
-                    value={emailNotifications}
-                    onValueChange={setEmailNotifications}
+                    value={settings.emailNotifications}
+                    onValueChange={updateEmailNotifications}
                     trackColor={{ false: '#E5E5EA', true: '#8A784E' }}
                     thumbColor="#FFFFFF"
                   />
@@ -189,8 +292,8 @@ const SettingsScreen: React.FC<SettingsScreenProps> = ({ onClose }) => {
                 </Text>
               </View>
               <Switch
-                value={biometricEnabled}
-                onValueChange={setBiometricEnabled}
+                value={settings.biometricEnabled}
+                onValueChange={updateBiometricEnabled}
                 trackColor={{ false: '#E5E5EA', true: '#8A784E' }}
                 thumbColor="#FFFFFF"
               />
@@ -203,24 +306,33 @@ const SettingsScreen: React.FC<SettingsScreenProps> = ({ onClose }) => {
                 <Text style={styles.settingRowDescription}>Require PIN to open app</Text>
               </View>
               <Switch
-                value={pinEnabled}
-                onValueChange={setPinEnabled}
+                value={settings.pinEnabled}
+                onValueChange={handlePINToggle}
                 trackColor={{ false: '#E5E5EA', true: '#8A784E' }}
                 thumbColor="#FFFFFF"
               />
             </View>
 
-            <View style={styles.divider} />
-            <TouchableOpacity style={styles.settingButton}>
-              <Text style={styles.settingButtonLabel}>Change PIN</Text>
-              <ChevronRight size={20} color="#8E8E93" />
-            </TouchableOpacity>
+            {settings.pinEnabled && (
+              <>
+                <View style={styles.divider} />
+                <TouchableOpacity style={styles.settingButton} onPress={handleChangePIN}>
+                  <Text style={styles.settingButtonLabel}>Change PIN</Text>
+                  <ChevronRight size={20} color="#8E8E93" />
+                </TouchableOpacity>
+              </>
+            )}
 
             <View style={styles.divider} />
-            <TouchableOpacity style={styles.settingButton}>
+            <TouchableOpacity
+              style={styles.settingButton}
+              onPress={() => setTimeoutModalVisible(true)}
+            >
               <Text style={styles.settingButtonLabel}>Auto-Lock Timeout</Text>
               <View style={styles.settingButtonRight}>
-                <Text style={styles.settingButtonValue}>5 minutes</Text>
+                <Text style={styles.settingButtonValue}>
+                  {getTimeoutLabel(settings.autoLockTimeout)}
+                </Text>
                 <ChevronRight size={20} color="#8E8E93" />
               </View>
             </TouchableOpacity>
@@ -234,10 +346,13 @@ const SettingsScreen: React.FC<SettingsScreenProps> = ({ onClose }) => {
           </View>
 
           <View style={styles.card}>
-            <TouchableOpacity style={styles.settingButton}>
+            <TouchableOpacity
+              style={styles.settingButton}
+              onPress={() => setLanguageModalVisible(true)}
+            >
               <Text style={styles.settingButtonLabel}>Language</Text>
               <View style={styles.settingButtonRight}>
-                <Text style={styles.settingButtonValue}>English</Text>
+                <Text style={styles.settingButtonValue}>{settings.language}</Text>
                 <ChevronRight size={20} color="#8E8E93" />
               </View>
             </TouchableOpacity>
@@ -248,11 +363,11 @@ const SettingsScreen: React.FC<SettingsScreenProps> = ({ onClose }) => {
         <View style={styles.section}>
           <Text style={styles.dangerTitle}>Danger Zone</Text>
           <View style={styles.card}>
-            <TouchableOpacity style={styles.dangerButton}>
-              <Text style={styles.dangerButtonText}>Clear Cache</Text>
+            <TouchableOpacity style={styles.dangerButton} onPress={handleClearCache}>
+              <Text style={styles.dangerButtonText}>Clear Cache ({cacheSize})</Text>
             </TouchableOpacity>
             <View style={styles.divider} />
-            <TouchableOpacity style={styles.dangerButton}>
+            <TouchableOpacity style={styles.dangerButton} onPress={handleResetSettings}>
               <Text style={styles.dangerButtonText}>Reset Settings</Text>
             </TouchableOpacity>
           </View>
@@ -261,6 +376,29 @@ const SettingsScreen: React.FC<SettingsScreenProps> = ({ onClose }) => {
         {/* Bottom Spacing */}
         <View style={styles.bottomSpacing} />
       </ScrollView>
+
+      {/* Modals */}
+      <SetPINModal
+        visible={setPINModalVisible}
+        onClose={() => setSetPINModalVisible(false)}
+        onPINSet={handleSetPIN}
+        mode={settings.pinEnabled ? 'change' : 'set'}
+        currentPIN={settings.pin}
+      />
+
+      <AutoLockTimeoutModal
+        visible={timeoutModalVisible}
+        onClose={() => setTimeoutModalVisible(false)}
+        currentTimeout={settings.autoLockTimeout}
+        onSelect={handleAutoLockTimeoutSelect}
+      />
+
+      <LanguageSelectorModal
+        visible={languageModalVisible}
+        onClose={() => setLanguageModalVisible(false)}
+        currentLanguage={settings.language}
+        onSelect={handleLanguageSelect}
+      />
     </SafeAreaView>
   );
 };
@@ -269,6 +407,11 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: '#F5F5F5',
+  },
+  loadingContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
   },
   header: {
     flexDirection: 'row',
