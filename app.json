@@ -18,7 +18,8 @@
       "infoPlist": {
         "NSSupportsLiveActivities": true,
         "NSSupportsLiveActivitiesFrequentUpdates": true,
-        "UIBackgroundModes": ["remote-notification"]
+        "UIBackgroundModes": ["remote-notification"],
+        "NSFaceIDUsageDescription": "Allow Daash to use Face ID for secure authentication and unlocking the app."
       }
     },
     "android": {
@@ -38,6 +39,12 @@
         "@react-native-firebase/messaging",
         {
           "iosNSUserNotificationsUsageDescription": "Allow Daash to send you notifications about transactions and important updates."
+        }
+      ],
+      [
+        "expo-local-authentication",
+        {
+          "faceIDPermission": "Allow Daash to use Face ID for secure authentication and unlocking the app."
         }
       ]
     ]
