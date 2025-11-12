@@ -176,17 +176,24 @@ const AdvancedBalanceCard: React.FC<AdvancedBalanceCardProps> = ({
                 <ActivityIndicator size="small" color="#FFFFFF" style={styles.assetsLoader} />
               ) : (
                 <>
-                  {assets.map((asset, index) => (
-                    <View key={`${asset.code}-${index}`} style={styles.assetItem}>
-                      <View style={styles.assetIcon}>
-                        <Text style={styles.assetIconText}>{asset.icon}</Text>
+                  {assets.length > 0 ? (
+                    assets.map((asset, index) => (
+                      <View key={`${asset.code}-${index}`} style={styles.assetItem}>
+                        <View style={styles.assetIcon}>
+                          <Text style={styles.assetIconText}>{asset.icon}</Text>
+                        </View>
+                        <View style={styles.assetInfo}>
+                          <Text style={styles.assetCode}>{asset.code}</Text>
+                        </View>
+                        <Text style={styles.assetBalance}>{asset.balance}</Text>
                       </View>
-                      <View style={styles.assetInfo}>
-                        <Text style={styles.assetCode}>{asset.code}</Text>
-                      </View>
-                      <Text style={styles.assetBalance}>{asset.balance}</Text>
+                    ))
+                  ) : (
+                    <View style={styles.emptyAssetsContainer}>
+                      <Text style={styles.emptyAssetsText}>No additional assets yet</Text>
+                      <Text style={styles.emptyAssetsSubtext}>Add USDC or other supported assets</Text>
                     </View>
-                  ))}
+                  )}
 
                   {onAddAsset && (
                     <TouchableOpacity
@@ -194,8 +201,10 @@ const AdvancedBalanceCard: React.FC<AdvancedBalanceCardProps> = ({
                       onPress={onAddAsset}
                       activeOpacity={0.8}
                     >
-                      <Plus size={16} color="#6B9F6E" />
-                      <Text style={styles.addAssetText}>Add Asset (e.g., USDC)</Text>
+                      <View style={styles.addAssetIconContainer}>
+                        <Plus size={18} color="#FFFFFF" />
+                      </View>
+                      <Text style={styles.addAssetText}>Add Asset (USDC)</Text>
                     </TouchableOpacity>
                   )}
                 </>
@@ -339,24 +348,44 @@ const styles = StyleSheet.create({
     fontWeight: '600',
     color: '#FFFFFF',
   },
+  emptyAssetsContainer: {
+    paddingVertical: 20,
+    paddingHorizontal: 16,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  emptyAssetsText: {
+    fontSize: 14,
+    fontWeight: '500',
+    color: '#8E8E93',
+    marginBottom: 4,
+  },
+  emptyAssetsSubtext: {
+    fontSize: 12,
+    color: '#6E6E73',
+  },
   addAssetButton: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
-    paddingVertical: 12,
-    paddingHorizontal: 16,
-    backgroundColor: '#2C2C2E',
+    paddingVertical: 14,
+    paddingHorizontal: 20,
+    backgroundColor: '#34C759',
     borderRadius: 12,
-    marginTop: 4,
-    borderWidth: 1,
-    borderColor: '#3A3A3C',
-    borderStyle: 'dashed',
+    marginTop: 12,
+    shadowColor: '#34C759',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.3,
+    shadowRadius: 4,
+    elevation: 4,
+  },
+  addAssetIconContainer: {
+    marginRight: 8,
   },
   addAssetText: {
-    fontSize: 14,
-    fontWeight: '600',
-    color: '#6B9F6E',
-    marginLeft: 6,
+    fontSize: 16,
+    fontWeight: '700',
+    color: '#FFFFFF',
   },
 });
 
