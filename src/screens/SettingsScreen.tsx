@@ -46,7 +46,7 @@ const SettingsScreen: React.FC<SettingsScreenProps> = ({ onClose }) => {
   const [languageModalVisible, setLanguageModalVisible] = useState(false);
   const [cacheSize, setCacheSize] = useState<string>('Calculating...');
 
-  const currencies = ['USD', 'EUR', 'GBP', 'JPY', 'CAD', 'AUD'];
+  const currencies = ['USD', 'EUR', 'GBP', 'JPY', 'CAD', 'AUD', 'ZAR', 'NGN'];
   const themes = [
     { id: 'light', label: 'Light' },
     { id: 'dark', label: 'Dark' },
