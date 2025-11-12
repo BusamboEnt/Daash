@@ -128,35 +128,48 @@ const AddAssetModal: React.FC<AddAssetModalProps> = ({
             Add assets to your wallet to hold and transact with them on the Stellar network.
           </Text>
 
-          <ScrollView style={styles.assetList}>
+          <ScrollView style={styles.assetList} showsVerticalScrollIndicator={false}>
             {/* USDC Asset */}
-            <TouchableOpacity
-              style={[
-                styles.assetCard,
-                loading && selectedAsset?.code === usdcAsset.code && styles.assetCardLoading,
-              ]}
-              onPress={() => handleAddAsset(usdcAsset)}
-              disabled={loading}
-            >
-              <View style={styles.assetIcon}>
-                <Text style={styles.assetIconText}>💵</Text>
-              </View>
-              <View style={styles.assetInfo}>
-                <Text style={styles.assetCode}>{usdcAsset.code}</Text>
-                <Text style={styles.assetName}>{usdcAsset.name}</Text>
-                <Text style={styles.assetDescription}>{usdcAsset.description}</Text>
-                {StellarService.isTestnet() && (
-                  <Text style={styles.testnetBadge}>TESTNET</Text>
-                )}
-              </View>
-              {loading && selectedAsset?.code === usdcAsset.code ? (
-                <ActivityIndicator size="small" color="#007AFF" />
-              ) : (
-                <View style={styles.addButton}>
-                  <Text style={styles.addButtonText}>Add</Text>
+            <View style={styles.assetCardWrapper}>
+              <TouchableOpacity
+                style={[
+                  styles.assetCard,
+                  loading && selectedAsset?.code === usdcAsset.code && styles.assetCardLoading,
+                ]}
+                onPress={() => handleAddAsset(usdcAsset)}
+                disabled={loading}
+                activeOpacity={0.7}
+              >
+                <View style={styles.assetIcon}>
+                  <Text style={styles.assetIconText}>💵</Text>
                 </View>
-              )}
-            </TouchableOpacity>
+                <View style={styles.assetInfo}>
+                  <Text style={styles.assetCode}>{usdcAsset.code}</Text>
+                  <Text style={styles.assetName}>{usdcAsset.name}</Text>
+                  <Text style={styles.assetDescription}>{usdcAsset.description}</Text>
+                  {StellarService.isTestnet() && (
+                    <Text style={styles.testnetBadge}>TESTNET</Text>
+                  )}
+                </View>
+              </TouchableOpacity>
+
+              {/* Add Button - Separate for better visibility */}
+              <TouchableOpacity
+                style={[
+                  styles.addButton,
+                  loading && selectedAsset?.code === usdcAsset.code && styles.addButtonLoading,
+                ]}
+                onPress={() => handleAddAsset(usdcAsset)}
+                disabled={loading}
+                activeOpacity={0.8}
+              >
+                {loading && selectedAsset?.code === usdcAsset.code ? (
+                  <ActivityIndicator size="small" color="#FFFFFF" />
+                ) : (
+                  <Text style={styles.addButtonText}>+ Add to Wallet</Text>
+                )}
+              </TouchableOpacity>
+            </View>
 
             {/* Coming Soon Section */}
             <View style={styles.comingSoonSection}>
@@ -239,6 +252,9 @@ const styles = StyleSheet.create({
     flex: 1,
     paddingHorizontal: 20,
   },
+  assetCardWrapper: {
+    marginBottom: 16,
+  },
   assetCard: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -294,15 +310,25 @@ const styles = StyleSheet.create({
     alignSelf: 'flex-start',
   },
   addButton: {
-    backgroundColor: '#007AFF',
-    paddingHorizontal: 20,
-    paddingVertical: 8,
-    borderRadius: 8,
+    backgroundColor: '#34C759',
+    paddingVertical: 16,
+    paddingHorizontal: 24,
+    borderRadius: 12,
+    alignItems: 'center',
+    justifyContent: 'center',
+    shadowColor: '#34C759',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.3,
+    shadowRadius: 8,
+    elevation: 6,
+  },
+  addButtonLoading: {
+    opacity: 0.7,
   },
   addButtonText: {
-    color: '#fff',
-    fontSize: 14,
-    fontWeight: '600',
+    color: '#FFFFFF',
+    fontSize: 17,
+    fontWeight: '700',
   },
   comingSoonSection: {
     marginTop: 24,
