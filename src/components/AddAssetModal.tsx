@@ -19,6 +19,7 @@ import {
 import { StellarService } from '../services/stellarService';
 import { StellarAsset, STELLAR_ASSETS } from '../types/wallet';
 import { SecureStorageService } from '../services/secureStorage';
+import CryptoIcon from './CryptoIcon';
 
 interface AddAssetModalProps {
   visible: boolean;
@@ -126,9 +127,7 @@ const AddAssetModal: React.FC<AddAssetModalProps> = ({
 
             {/* USDC Asset Card */}
             <View style={styles.assetCard}>
-              <View style={styles.assetIcon}>
-                <Text style={styles.assetIconText}>💵</Text>
-              </View>
+              <CryptoIcon code={usdcAsset.code} size={56} />
               <View style={styles.assetInfo}>
                 <Text style={styles.assetCode}>{usdcAsset.code}</Text>
                 <Text style={styles.assetName}>{usdcAsset.name}</Text>
@@ -233,18 +232,7 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.3,
     shadowRadius: 4,
     elevation: 4,
-  },
-  assetIcon: {
-    width: 56,
-    height: 56,
-    borderRadius: 28,
-    backgroundColor: '#FFFFFF',
-    alignItems: 'center',
-    justifyContent: 'center',
-    marginRight: 16,
-  },
-  assetIconText: {
-    fontSize: 32,
+    gap: 16,
   },
   assetInfo: {
     flex: 1,

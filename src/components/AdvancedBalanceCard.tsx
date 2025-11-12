@@ -3,6 +3,7 @@ import { View, Text, TouchableOpacity, StyleSheet, ActivityIndicator } from 'rea
 import { Eye, EyeOff, TrendingUp, TrendingDown, ArrowUp, ArrowDown, Plus } from 'lucide-react-native';
 import { StellarService } from '../services/stellarService';
 import { WalletBalance } from '../types/wallet';
+import CryptoIcon from './CryptoIcon';
 
 interface AdvancedBalanceCardProps {
   balance?: number;
@@ -19,7 +20,6 @@ interface AdvancedBalanceCardProps {
 interface AssetDisplay {
   code: string;
   balance: string;
-  icon: string;
 }
 
 const AdvancedBalanceCard: React.FC<AdvancedBalanceCardProps> = ({
@@ -55,15 +55,11 @@ const AdvancedBalanceCard: React.FC<AdvancedBalanceCardProps> = ({
           return {
             code: 'XLM',
             balance: parseFloat(bal.balance).toFixed(2),
-            icon: '⭐',
           };
         } else {
-          let icon = '💵';
-          if (bal.asset_code === 'USDC') icon = '💵';
           return {
             code: bal.asset_code || 'Unknown',
             balance: parseFloat(bal.balance).toFixed(2),
-            icon,
           };
         }
       });
@@ -179,9 +175,7 @@ const AdvancedBalanceCard: React.FC<AdvancedBalanceCardProps> = ({
                   {assets.length > 0 ? (
                     assets.map((asset, index) => (
                       <View key={`${asset.code}-${index}`} style={styles.assetItem}>
-                        <View style={styles.assetIcon}>
-                          <Text style={styles.assetIconText}>{asset.icon}</Text>
-                        </View>
+                        <CryptoIcon code={asset.code} size={36} />
                         <View style={styles.assetInfo}>
                           <Text style={styles.assetCode}>{asset.code}</Text>
                         </View>
@@ -322,18 +316,7 @@ const styles = StyleSheet.create({
     backgroundColor: '#2C2C2E',
     borderRadius: 12,
     marginBottom: 8,
-  },
-  assetIcon: {
-    width: 36,
-    height: 36,
-    borderRadius: 18,
-    backgroundColor: '#3A3A3C',
-    alignItems: 'center',
-    justifyContent: 'center',
-    marginRight: 12,
-  },
-  assetIconText: {
-    fontSize: 20,
+    gap: 12,
   },
   assetInfo: {
     flex: 1,

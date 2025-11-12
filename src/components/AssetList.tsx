@@ -16,6 +16,7 @@ import {
 } from 'react-native';
 import { StellarService } from '../services/stellarService';
 import { WalletBalance } from '../types/wallet';
+import CryptoIcon from './CryptoIcon';
 
 interface AssetListProps {
   publicKey: string;
@@ -26,7 +27,6 @@ interface AssetListProps {
 interface AssetDisplay {
   code: string;
   balance: string;
-  icon: string;
   name: string;
   isNative: boolean;
 }
@@ -50,24 +50,20 @@ const AssetList: React.FC<AssetListProps> = ({ publicKey, onAddAsset, onRefresh 
           return {
             code: 'XLM',
             balance: parseFloat(balance.balance).toFixed(2),
-            icon: '⭐',
             name: 'Stellar Lumens',
             isNative: true,
           };
         } else {
           // USDC or other assets
-          let icon = '💵';
           let name = balance.asset_code || 'Unknown';
 
           if (balance.asset_code === 'USDC') {
-            icon = '💵';
             name = 'USD Coin';
           }
 
           return {
             code: balance.asset_code || 'Unknown',
             balance: parseFloat(balance.balance).toFixed(2),
-            icon,
             name,
             isNative: false,
           };
@@ -89,9 +85,7 @@ const AssetList: React.FC<AssetListProps> = ({ publicKey, onAddAsset, onRefresh 
 
   const renderAssetItem = ({ item }: { item: AssetDisplay }) => (
     <View style={styles.assetItem}>
-      <View style={styles.assetIcon}>
-        <Text style={styles.assetIconText}>{item.icon}</Text>
-      </View>
+      <CryptoIcon code={item.code} size={40} />
       <View style={styles.assetInfo}>
         <Text style={styles.assetCode}>{item.code}</Text>
         <Text style={styles.assetName}>{item.name}</Text>
