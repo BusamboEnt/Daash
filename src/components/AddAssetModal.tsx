@@ -18,19 +18,20 @@ import {
 } from 'react-native';
 import { StellarService } from '../services/stellarService';
 import { StellarAsset, STELLAR_ASSETS } from '../types/wallet';
+import { SecureStorageService } from '../services/secureStorage';
 
 interface AddAssetModalProps {
   visible: boolean;
   onClose: () => void;
   onAssetAdded: () => void;
-  walletSecret: string;
+  publicKey: string;
 }
 
 const AddAssetModal: React.FC<AddAssetModalProps> = ({
   visible,
   onClose,
   onAssetAdded,
-  walletSecret,
+  publicKey,
 }) => {
   const [loading, setLoading] = useState(false);
   const [selectedAsset, setSelectedAsset] = useState<StellarAsset | null>(null);
@@ -43,12 +44,21 @@ const AddAssetModal: React.FC<AddAssetModalProps> = ({
       setLoading(true);
       setSelectedAsset(asset);
 
+      // Get secret key from secure storage
+      const secretKey = await SecureStorageService.getSecretKey();
+      if (!secretKey) {
+        Alert.alert(
+          'Error',
+          'Could not retrieve wallet credentials. Please try again.'
+        );
+        setLoading(false);
+        setSelectedAsset(null);
+        return;
+      }
+
       // Check if already has trustline
-      const keypair = await import('@stellar/stellar-sdk').then(sdk =>
-        sdk.Keypair.fromSecret(walletSecret)
-      );
       const hasTrustline = await StellarService.hasTrustline(
-        keypair.publicKey(),
+        publicKey,
         asset
       );
 
@@ -63,7 +73,7 @@ const AddAssetModal: React.FC<AddAssetModalProps> = ({
       }
 
       // Create trustline
-      const txHash = await StellarService.createTrustline(walletSecret, asset);
+      const txHash = await StellarService.createTrustline(secretKey, asset);
 
       console.log('Trustline created:', txHash);
 

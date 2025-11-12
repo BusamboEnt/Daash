@@ -177,14 +177,14 @@ function HomeScreen({ navigation }: HomeProps) {
       </Modal>
 
       {/* Add Asset Modal */}
-      {wallet.wallet?.secretKey && (
+      {wallet.wallet?.publicKey && (
         <AddAssetModal
           visible={showAddAsset}
           onClose={() => setShowAddAsset(false)}
           onAssetAdded={() => {
             wallet.refreshBalance();
           }}
-          walletSecret={wallet.wallet.secretKey}
+          publicKey={wallet.wallet.publicKey}
         />
       )}
     </View>
