@@ -178,11 +178,11 @@ const AddAssetModal: React.FC<AddAssetModalProps> = ({
 const styles = StyleSheet.create({
   modalOverlay: {
     flex: 1,
-    backgroundColor: 'rgba(138, 120, 78, 0.95)',
+    backgroundColor: 'rgba(0, 0, 0, 0.5)',
     justifyContent: 'flex-end',
   },
   modalContainer: {
-    backgroundColor: '#8A784E',
+    backgroundColor: '#FFFFFF',
     borderTopLeftRadius: 24,
     borderTopRightRadius: 24,
   },
@@ -198,27 +198,26 @@ const styles = StyleSheet.create({
   title: {
     fontSize: 28,
     fontWeight: 'bold',
-    color: '#FFFFFF',
+    color: '#333333',
   },
   closeButton: {
     width: 36,
     height: 36,
     borderRadius: 18,
-    backgroundColor: '#1C1C1E',
+    backgroundColor: '#F5F5F5',
     alignItems: 'center',
     justifyContent: 'center',
   },
   closeButtonText: {
     fontSize: 22,
-    color: '#FFFFFF',
+    color: '#333333',
     lineHeight: 22,
   },
   description: {
     fontSize: 15,
-    color: '#FFFFFF',
+    color: '#666666',
     marginBottom: 24,
     lineHeight: 22,
-    opacity: 0.9,
   },
   assetCard: {
     flexDirection: 'row',
@@ -256,10 +255,10 @@ const styles = StyleSheet.create({
   },
   testnetBadge: {
     fontSize: 11,
-    color: '#FFFFFF',
+    color: '#8A784E',
     fontWeight: '700',
     marginTop: 6,
-    backgroundColor: '#8A784E',
+    backgroundColor: '#FFF3E0',
     paddingHorizontal: 8,
     paddingVertical: 3,
     borderRadius: 6,
@@ -289,22 +288,23 @@ const styles = StyleSheet.create({
     fontWeight: '800',
   },
   infoBox: {
-    backgroundColor: '#1C1C1E',
+    backgroundColor: '#F5F5F5',
     borderRadius: 12,
     padding: 16,
     marginBottom: 16,
+    borderLeftWidth: 4,
+    borderLeftColor: '#8A784E',
   },
   infoTitle: {
     fontSize: 15,
     fontWeight: '700',
-    color: '#FFFFFF',
+    color: '#333333',
     marginBottom: 8,
   },
   infoText: {
     fontSize: 14,
-    color: '#FFFFFF',
+    color: '#666666',
     lineHeight: 22,
-    opacity: 0.85,
   },
   comingSoonBox: {
     alignItems: 'center',
@@ -312,9 +312,8 @@ const styles = StyleSheet.create({
   },
   comingSoonText: {
     fontSize: 13,
-    color: '#FFFFFF',
+    color: '#8E8E93',
     fontStyle: 'italic',
-    opacity: 0.6,
   },
 });
 
